@@ -7,9 +7,8 @@
 \usepackage[nottoc]{tocbibind}
 
 %% Math
-\usepackage{amsmath,amssymb,amsthm,bm,amsfonts,mathrsfs,bbm}
+\usepackage{amsmath,amssymb,amsthm,bm,amsfonts,mathrsfs}
 \usepackage{braket}
-\usepackage{physics}
 
 %% Figures & tables
 \usepackage{graphicx}
@@ -32,27 +31,30 @@
 %% Misc layout
 \usepackage{wrapfig}
 \usepackage{subcaption}
+\usepackage{xcolor}
 
 %% Theorem environments
 \newtheorem{theorem}{Theorem}
 
 %% Convenience macros
 \newcommand{\QICK}{\textsc{qick}}
-\newcommand{\todo}[1]{\textbf{\color{red}[TODO: #1]}}
+\newcommand{\todo}[1]{{\bfseries\color{red}[TODO: #1]}}
 
 \begin{document}
 
-\title[Master Thesis -- Ender Jose Barillas]{%
-  A General-Purpose QICK-Based Readout Architecture\\
+\title[Master Thesis -- Ender Jose Barillas Rodriguez]{%
+  A General-Purpose QICK-Based Readout Architecture
   for Real-Time and Accelerated Quantum State Measurement}
 
-\author{Ender Jose Barillas}
-\supervisor{Joel \todo{Surname}}
+\author{Ender Jose Barillas Rodriguez}
+\supervisor{Joel Pérez Díaz}
 
 \address{Departament de Física Quàntica i Astrofísica, Universitat de Barcelona \&
   Qilimanjaro Quantum Tech, 08001 Barcelona, Spain}
 \ead{ender.barillas@qilimanjaro.tech}
 \date{July 2026}
+
+\maketitle
 
 %% ----------------------------------------------------------------
 \begin{abstract}
@@ -88,9 +90,9 @@ dynamic quantum circuits.
 
 %% ----------------------------------------------------------------
 \section*{Acknowledgements}
-I would like to thank the Quantronics team at Qilimanjaro Quantum Tech for their
-guidance and support throughout this project.  Special thanks to Joel
-\todo{Surname} for supervising this work and to all colleagues who offered
+I would like to thank the team at Qilimanjaro Quantum Tech for their
+guidance and support throughout this project.  Special thanks to Joel Pérez Díaz
+for supervising this work and to all colleagues who offered
 technical help and stimulating discussions.  This thesis was carried out during
 an internship at Qilimanjaro from February to July 2026.
 
