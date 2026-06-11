@@ -1,0 +1,109 @@
+%% Chapter 7 — ML-Assisted State Discrimination
+\section{ML-Assisted State Discrimination}
+\label{sec:ml}
+
+\subsection{IQ Data and the Discrimination Problem}
+
+Each single-shot readout produces an averaged $(I, Q)$ pair — a point in the
+complex plane.  Repeated preparation and measurement of the qubit in the same
+state produces a cloud (cluster) of such points, whose centroid and spread depend
+on the readout power, resonator parameters, and integration time.  Two such
+clusters, one for $\ket{0}$ and one for $\ket{1}$, must be distinguished
+reliably.
+
+For ideal Gaussian clusters of equal covariance, the optimal linear classifier is
+the perpendicular bisector of the line segment joining the two centroids:
+\begin{equation}
+  d(\mathbf{x}) = (\boldsymbol{\mu}_1 - \boldsymbol{\mu}_0)^\top
+                  \boldsymbol{\Sigma}^{-1}
+                  \left(\mathbf{x} - \tfrac{1}{2}(\boldsymbol{\mu}_0 + \boldsymbol{\mu}_1)\right)
+  \underset{\hat{y}=0}{\overset{\hat{y}=1}{\gtrless}} 0,
+\label{eq:lda}
+\end{equation}
+where $\boldsymbol{\mu}_0, \boldsymbol{\mu}_1 \in \mathbb{R}^2$ are the class
+centroids and $\boldsymbol{\Sigma}$ is the common covariance matrix (Linear
+Discriminant Analysis, LDA).  When the covariances differ, Quadratic Discriminant
+Analysis (QDA) uses the class-specific covariances and yields a curved decision
+boundary.
+
+In practice, residual state preparation errors, qubit $T_1$ decay during the
+readout pulse, and higher-level leakage ($\ket{2}$, $\ket{3}$) distort the
+clusters from ideal Gaussians.  These effects motivate the use of more expressive
+classifiers.
+
+\subsection{Lightweight Classifiers for FPGA Deployment}
+
+For on-FPGA deployment, the classifier must be computable using only fixed-point
+arithmetic and a small number of multiply-accumulate operations.  The key
+constraints are:
+\begin{itemize}
+  \item \textbf{Latency}: the decision must complete within one tProcessor cycle
+        budget ($\lesssim$\SI{10}{\nano\second}) to avoid extending the readout
+        dead time.
+  \item \textbf{Resource usage}: the classifier must fit in the available DSP
+        slices and block RAM of the FPGA without displacing the readout and
+        tProcessor logic.
+  \item \textbf{Trainability}: the classifier must be trainable on a laptop from
+        a few thousand calibration shots.
+\end{itemize}
+
+The following classifiers are evaluated in this work:
+
+\paragraph{Linear threshold (baseline).}
+A single fixed-point multiply-add and a comparison.  Equivalent to LDA on the
+1D projection of the IQ data onto the inter-centroid axis.  Minimal resource
+usage, but suboptimal when cluster covariances differ significantly.
+
+\paragraph{Quadratic threshold.}
+A quadratic function of $(I, Q)$ derived from QDA.  Requires evaluating a
+$2 \times 2$ matrix product, achievable with 4 multiply-accumulates.  Handles
+asymmetric clusters.
+
+\paragraph{Small neural network.}
+A two-layer perceptron with inputs $(I, Q)$, a hidden layer of 8–16 neurons with
+ReLU activations, and a single sigmoid output.  The hidden layer can be computed
+as a matrix-vector product; ReLU maps to a conditional copy.  This architecture
+fits in $\lesssim 200$ 18-bit DSP slices on the ZCU216 FPGA fabric.
+
+\subsection{Training and Evaluation Pipeline}
+
+The training pipeline operates as follows:
+\begin{enumerate}
+  \item \textbf{Calibration data collection}: prepare the qubit in $\ket{0}$
+        (passive thermalisation or active reset) and $\ket{1}$ ($\pi$ pulse
+        followed by reset) and collect $N_\text{cal}$ IQ shots per class using
+        the accumulated readout mode.
+  \item \textbf{Preprocessing}: subtract the per-class mean (centring) and
+        optionally rotate the IQ frame so that the inter-centroid axis aligns with
+        the $I$ axis.
+  \item \textbf{Training}: fit the chosen classifier using scikit-learn (LDA/QDA)
+        or PyTorch (neural network) on the host laptop.
+  \item \textbf{Quantisation}: convert the trained weights to fixed-point
+        representation compatible with the FPGA DSP pipeline.
+  \item \textbf{Deployment}: write the quantised weights into the tProcessor data
+        memory or a dedicated classification IP block.
+\end{enumerate}
+
+\subsection{Fidelity Metrics}
+
+Table~\ref{tab:fidelity} \todo{fill with actual measured values} summarises the
+expected readout fidelity and latency for each classifier.
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of state discrimination classifiers. All values are
+         estimated / to be measured.}
+\label{tab:fidelity}
+\begin{tabular}{llll}
+\toprule
+Classifier & $\mathcal{F}$ (\%) & FPGA latency (ns) & DSP slices \\
+\midrule
+Linear threshold & \todo{--}  & $<$5  & 2 \\
+QDA              & \todo{--}  & $<$10 & 8 \\
+MLP (8 neurons)  & \todo{--}  & $<$20 & $\sim$50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\todo{Add IQ scatter plots (one per classifier) showing the decision boundary
+overlaid on calibration data, and the ROC curve comparison.}

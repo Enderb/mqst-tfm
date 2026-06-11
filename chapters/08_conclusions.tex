@@ -1,0 +1,72 @@
+%% Chapter 8 — Conclusions
+\section{Conclusions and Outlook}
+\label{sec:conclusions}
+
+\subsection{Summary}
+
+This thesis has presented a general-purpose readout architecture for
+superconducting qubits, built on the \QICK{} framework and the Xilinx ZCU216
+RFSoC platform at Qilimanjaro Quantum Tech.
+
+The main contributions are:
+
+\begin{enumerate}
+  \item \textbf{System integration}: The ZCU216 board, XM655 analogue front-end,
+        and \QICK{} firmware were brought up from scratch, including SSH access,
+        PYNQ configuration, and a persistent Pyro4 remote-operation server that
+        preserves calibration state across notebook sessions.
+
+  \item \textbf{Phase-coherent readout calibration}: A systematic calibration
+        procedure was developed that measures the random DAC–ADC DDS phase offset
+        at board power-on.  The linear phase-vs-frequency model
+        $\phi(f) = \phi_0 - 360^\circ \tau f$ was validated, and the fitted
+        \texttt{res\_phase} value was incorporated into the standard experiment
+        configuration.
+
+  \item \textbf{Readout data-path}: The trade-offs between decimated (waveform)
+        and accumulated (averaged IQ) readout modes were characterised.  The
+        $1/\sqrt{N_\text{reps}}$ noise scaling of accumulated readout was
+        confirmed, reducing single-shot noise from $\sim$1.9 to $\sim$0.14 ADU at
+        1000 repetitions.  The resonator spectroscopy workflow was established for
+        both single-qubit and multiplexed scenarios.
+
+  \item \textbf{Real-time feedback}: The tProcessor-64 conditional branch
+        (\texttt{condj}) was demonstrated as the core primitive for mid-circuit
+        measurement.  An active qubit reset sequence was designed, combining
+        dispersive readout, thresholding, and a calibrated $\pi$ pulse, with a
+        digital decision-to-fire latency below \SI{100}{\nano\second}.
+
+  \item \textbf{ML-assisted discrimination}: Linear Discriminant Analysis, QDA,
+        and a small neural network were evaluated as state classifiers.
+        \todo{Summarise actual experimental findings once measurements are
+        complete.}
+\end{enumerate}
+
+\subsection{Outlook}
+
+Several natural extensions of this work are planned:
+
+\paragraph{Multi-qubit readout.}
+The current architecture supports a single readout tone.  Extending to
+multiplexed readout via the \QICK{} PFB firmware would allow simultaneous readout
+of all qubits in Qilimanjaro's multi-qubit chips, which is a prerequisite for
+running quantum error-correction cycles.
+
+\paragraph{On-FPGA classifier deployment.}
+The machine-learning classifiers developed in Chapter~\ref{sec:ml} are currently
+evaluated in software.  Their deployment as fixed-point FPGA IP blocks — so that
+the tProcessor receives a binary decision within a single clock cycle — is the
+next step toward closing the active-reset feedback loop at full speed.
+
+\paragraph{Integration with Qilimanjaro's software stack.}
+The \QICK{}-based readout layer developed here should be integrated with
+Qilimanjaro's higher-level quantum programming interfaces (circuit compilation,
+calibration databases, experiment management) to provide a production-ready
+control stack.
+
+\paragraph{Fluxonium-specific readout optimisation.}
+The dispersive shift landscape for fluxonium qubits is two-dimensional in the
+$(\Phi_z, \Phi_x)$ flux space.  An ML-assisted optimisation of the readout
+circuit parameters — coupling capacitance, resonator frequency — to maximise the
+dimensionless cavity pull over a large flux region is a complementary research
+direction being pursued in a related BSc project within the team.

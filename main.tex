@@ -1,0 +1,119 @@
+
+\documentclass[a4paper,onecolumn,11pt,unpublished]{quantumarticle}
+\pdfoutput=1
+
+%% Bibliography
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[nottoc]{tocbibind}
+
+%% Math
+\usepackage{amsmath,amssymb,amsthm,bm,amsfonts,mathrsfs,bbm}
+\usepackage{braket}
+\usepackage{physics}
+
+%% Figures & tables
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{siunitx}
+
+%% Algorithms & code
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{minted}     % requires --shell-escape; see README
+
+%% Typography
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{hyperref}
+\usepackage[babel]{microtype}
+
+%% Misc layout
+\usepackage{wrapfig}
+\usepackage{subcaption}
+
+%% Theorem environments
+\newtheorem{theorem}{Theorem}
+
+%% Convenience macros
+\newcommand{\QICK}{\textsc{qick}}
+\newcommand{\todo}[1]{\textbf{\color{red}[TODO: #1]}}
+
+\begin{document}
+
+\title[Master Thesis -- Ender Jose Barillas]{%
+  A General-Purpose QICK-Based Readout Architecture\\
+  for Real-Time and Accelerated Quantum State Measurement}
+
+\author{Ender Jose Barillas}
+\supervisor{Joel \todo{Surname}}
+
+\address{Departament de Física Quàntica i Astrofísica, Universitat de Barcelona \&
+  Qilimanjaro Quantum Tech, 08001 Barcelona, Spain}
+\ead{ender.barillas@qilimanjaro.tech}
+\date{July 2026}
+
+%% ----------------------------------------------------------------
+\begin{abstract}
+Low-latency and high-fidelity qubit state measurement is essential for
+superconducting quantum computing, particularly for enabling mid-circuit
+measurements and real-time feedback. Conventional readout techniques rely on
+host-side processing, introducing delays that limit measurements to the end of a
+quantum circuit. FPGA-based approaches offer a path toward in-situ state
+discrimination, but many existing solutions are specialised or tightly coupled to
+specific hardware designs.
+
+This thesis presents a general-purpose readout architecture based on the
+\QICK{} framework~\cite{Stefanazzi2022}, implemented on a Xilinx ZCU216 RFSoC
+platform, that supports both mid-circuit and end-of-circuit quantum state
+measurements. The work encompasses full system integration, including FPGA
+configuration and remote operation, \QICK{}-based calibration, and the design of
+a real-time readout data path. Control and readout waveforms are generated using
+Direct Digital Synthesis (DDS), and the role of the analogue front end is
+examined to ensure reliable signal transmission and measurement.
+
+Building on this infrastructure, we investigate machine-learning-assisted state
+discrimination within \QICK{} to accelerate readout while maintaining accuracy.
+Lightweight machine-learning methods suitable for FPGA deployment are evaluated
+with respect to latency and computational cost. The resulting architecture enables
+low-latency state classification directly on the control hardware, reducing
+reliance on host-side processing and providing a unified measurement pipeline for
+dynamic quantum circuits.
+\end{abstract}
+
+\noindent{\it Keywords}: superconducting qubits, readout, FPGA, QICK, RFSoC,
+  dispersive measurement, mid-circuit measurement, machine learning
+\bigskip
+
+%% ----------------------------------------------------------------
+\section*{Acknowledgements}
+I would like to thank the Quantronics team at Qilimanjaro Quantum Tech for their
+guidance and support throughout this project.  Special thanks to Joel
+\todo{Surname} for supervising this work and to all colleagues who offered
+technical help and stimulating discussions.  This thesis was carried out during
+an internship at Qilimanjaro from February to July 2026.
+
+\bigskip
+\tableofcontents
+\clearpage
+
+%% ----------------------------------------------------------------
+\input{chapters/01_introduction}
+\input{chapters/02_background}
+\input{chapters/03_hardware}
+\input{chapters/04_integration}
+\input{chapters/05_readout}
+\input{chapters/06_feedback}
+\input{chapters/07_ml}
+\input{chapters/08_conclusions}
+
+%% ----------------------------------------------------------------
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\clearpage
+\appendix
+\input{appendices/app_a_code}
+
+\end{document}

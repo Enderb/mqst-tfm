@@ -1,0 +1,97 @@
+%% Appendix A — Code Listings
+\section{Key Code Listings}
+\label{appendix:code}
+
+This appendix collects the most important Python/\QICK{} code snippets used in
+this thesis.  Full notebooks are available in the accompanying GitHub repository.
+
+\subsection{Phase Calibration Programme}
+
+\begin{minted}[fontsize=\small,linenos,breaklines]{python}
+class PhaseCalProgram(AveragerProgram):
+    """Sweeps frequency and measures DAC-ADC phase offset."""
+
+    def initialize(self):
+        cfg = self.cfg
+        self.declare_gen(ch=cfg["res_ch"], nqz=1)
+        self.declare_readout(ch=cfg["ro_ch"],
+                             length=cfg["readout_length"],
+                             freq=cfg["pulse_freq"],
+                             gen_ch=cfg["res_ch"])
+        freq_reg = self.freq2reg(cfg["pulse_freq"],
+                                 gen_ch=cfg["res_ch"],
+                                 ro_ch=cfg["ro_ch"])
+        self.set_pulse_registers(ch=cfg["res_ch"],
+                                 style="const",
+                                 freq=freq_reg,
+                                 phase=0,
+                                 gain=cfg["pulse_gain"],
+                                 length=cfg["length"])
+        self.synci(200)
+
+    def body(self):
+        self.measure(pulse_ch=self.cfg["res_ch"],
+                     adcs=[self.cfg["ro_ch"]],
+                     adc_trig_offset=self.cfg["adc_trig_offset"],
+                     wait=True,
+                     syncdelay=self.us2cycles(self.cfg["relax_delay"]))
+\end{minted}
+
+\subsection{Fast Amplitude Sweep with \texttt{RAveragerProgram}}
+
+\begin{minted}[fontsize=\small,linenos,breaklines]{python}
+class SweepProgram(RAveragerProgram):
+    """Sweeps DAC gain inside the FPGA without Python overhead."""
+
+    def initialize(self):
+        cfg = self.cfg
+        self.declare_gen(ch=cfg["res_ch"], nqz=1)
+        self.declare_readout(ch=cfg["ro_ch"],
+                             length=cfg["readout_length"],
+                             freq=cfg["pulse_freq"],
+                             gen_ch=cfg["res_ch"])
+        freq_reg = self.freq2reg(cfg["pulse_freq"],
+                                 gen_ch=cfg["res_ch"],
+                                 ro_ch=cfg["ro_ch"])
+        self.set_pulse_registers(ch=cfg["res_ch"],
+                                 style="const",
+                                 freq=freq_reg,
+                                 phase=cfg["res_phase"],
+                                 gain=cfg["start"],
+                                 length=cfg["length"])
+        self.r_rp   = self.ch_page(cfg["res_ch"])
+        self.r_gain = self.sreg(cfg["res_ch"], "gain")
+        self.synci(200)
+
+    def body(self):
+        self.measure(pulse_ch=self.cfg["res_ch"],
+                     adcs=[self.cfg["ro_ch"]],
+                     adc_trig_offset=self.cfg["adc_trig_offset"],
+                     wait=True,
+                     syncdelay=self.us2cycles(self.cfg["relax_delay"]))
+
+    def update(self):
+        self.mathi(self.r_rp, self.r_gain, self.r_gain,
+                   '+', self.cfg["step"])
+\end{minted}
+
+\subsection{Active Reset Sequence (Pseudocode)}
+
+\begin{algorithm}
+\caption{Active qubit reset}
+\label{alg:active_reset}
+\begin{algorithmic}
+\Require Calibrated $\pi$-pulse amplitude $A_\pi$ and readout threshold $\theta$
+\State Trigger ADC readout window
+\State Play readout tone on resonator channel
+\State \textbf{wait} for readout window to close
+\State $b \gets \text{FPGA\_threshold}(I + jQ,\, \theta)$
+  \Comment{$b=1$ if qubit in $\ket{1}$}
+\State \textbf{regwi} $r_b \gets b$
+\State \textbf{condj} $r_b < 1$ \textbf{goto} SKIP\_PI
+\State Play $\pi$ pulse on qubit drive channel
+\State \textbf{label} SKIP\_PI
+\State \textbf{synci} $t_\text{relax}$
+  \Comment{Allow cavity photons to decay}
+\end{algorithmic}
+\end{algorithm}

@@ -1,0 +1,110 @@
+%% Chapter 4 — System Integration
+\section{System Integration}
+\label{sec:integration}
+
+\subsection{FPGA Configuration and Board Bring-up}
+
+The ZCU216 boots the PYNQ Linux image from an SD card.  After boot, the
+\QICK{} bitstream is loaded onto the FPGA fabric by instantiating a
+\texttt{QickSoc} object in Python, which calls the PYNQ overlay loader and
+configures all IP blocks.  Because the RFSoC converters are controlled through
+AXI register maps rather than external chip-select lines, initialisation is
+entirely software-driven.
+
+The board is accessed over SSH.  To avoid re-initialising the hardware for every
+new notebook session, a persistent Pyro4 object server is launched once on the
+board and kept running:
+\begin{minted}[fontsize=\small,linenos]{python}
+# On the board (runs once per power cycle)
+import Pyro4, qick
+soc = qick.QickSoc()
+daemon = Pyro4.Daemon()
+uri = daemon.register(soc, "qick.soc")
+Pyro4.locateNS().register("qick.soc", uri)
+daemon.requestLoop()
+\end{minted}
+
+From a remote laptop:
+\begin{minted}[fontsize=\small,linenos]{python}
+import Pyro4
+soc = Pyro4.Proxy("PYRONAME:qick.soc")
+soccfg = soc  # lightweight config object
+\end{minted}
+
+This design preserves the phase calibration state (see
+Section~\ref{subsec:phase_calib}) across reconnects and makes experiment
+iteration fast.
+
+\subsection{Channel Mapping}
+
+The \QICK{} firmware assigns each physical DAC output to a numbered
+\emph{generator channel} and each physical ADC input to a numbered
+\emph{readout channel}.  On the ZCU216 with the default \QICK{} bitstream, the
+mapping relevant to this work is shown in Table~\ref{tab:channels}.
+
+\begin{table}[ht]
+\centering
+\caption{QICK channel mapping on the ZCU216.}
+\label{tab:channels}
+\begin{tabular}{llll}
+\toprule
+\QICK{} Channel & Physical Port & HD Header & Function \\
+\midrule
+Generator 6 & DAC 2\_231 & JHC3 & Readout / control drive \\
+Readout 0   & ADC 0\_226 & JHC5 & IQ acquisition \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Phase Calibration}
+\label{subsec:phase_calib}
+
+Each time the ZCU216 is powered on or the FPGA bitstream is reloaded, the DDS
+oscillators in the DAC and ADC blocks boot with a random mutual phase offset
+$\phi$.  Without compensation, IQ measurements rotate unpredictably between
+sessions, making it impossible to compare results across power cycles.
+
+\paragraph{Phase model.}
+A loopback tone from DAC 2\_231 to ADC 0\_226 measures $\phi$ at a given
+frequency.  Because the two oscillators are effectively separated by a fixed time
+delay $\tau$ (the round-trip propagation delay in the loopback cable), the phase
+offset scales linearly with frequency:
+\begin{equation}
+  \phi(f) = \phi_0 - 360^\circ \cdot \tau \cdot f,
+\label{eq:phase_model}
+\end{equation}
+where $\phi_0$ is a constant offset and $\tau \approx \SI{251}{\micro\second}$
+in the as-assembled loopback (dominated by the cable length, not the on-chip
+delay).
+
+\paragraph{Calibration procedure.}
+The phase calibration sweeps a range of frequencies $f_i$ near the target readout
+frequency, records the averaged IQ phasor at each point, and extracts
+$\phi_i = \arg\langle I + jQ \rangle$.  The pair $(\phi_0, \tau)$ is then fitted
+using \texttt{scipy.optimize.least\_squares}, taking care to handle the
+$0^\circ/360^\circ$ phase wrap correctly.  The fit is considered reliable when
+the signal-to-noise ratio satisfies $|\text{mag}| \gg \text{RMS}$ (e.g.
+$637 \gg 1.8$~ADU in a typical calibration run).
+
+The resulting \texttt{res\_phase} value:
+\begin{equation}
+  \phi_\text{res} = \phi_0 - 360^\circ \cdot \tau \cdot f_\text{res}
+\end{equation}
+is stored in the experiment configuration dictionary and passed to the readout
+pulse via \texttt{soccfg.deg2reg(phi\_res)}, which converts degrees to the
+integer register format expected by the tProcessor.  This calibration must be
+re-run after every board reboot or bitstream reload, but remains valid throughout
+a measurement session.
+
+\paragraph{Measurement cadence.}
+A summary of the recommended start-of-session checklist is:
+\begin{enumerate}
+  \item Power on and wait for PYNQ to boot ($\approx$\SI{60}{\second}).
+  \item Connect the loopback (DAC 2\_231 $\to$ BALUN $\to$ SMA $\to$ BALUN $\to$
+        ADC 0\_226) and run the phase calibration notebook.
+  \item Identify the correct \texttt{adc\_trig\_offset} using decimated readout
+        (see Section~\ref{subsec:decimated_vs_accum}).
+  \item Switch to accumulated readout for all data-taking.
+  \item At session end, call \texttt{soc.reset\_gens()} to halt all running
+        generators.
+\end{enumerate}

@@ -1,0 +1,115 @@
+%% Chapter 5 — Readout Architecture
+\section{Readout Architecture}
+\label{sec:readout}
+
+\subsection{DDS-Based Signal Generation}
+
+In a standard heterodyne readout chain, a local oscillator (LO) at frequency
+$f_\text{LO}$ is mixed with a baseband envelope to up-convert the readout tone to
+the resonator frequency $f_r$.  This analogue mixing process introduces image
+products and LO leakage that degrade fidelity, requiring careful IQ imbalance
+correction.
+
+\QICK{} avoids analogue mixing entirely.  Both the readout drive and the
+demodulation reference are produced by the on-chip DDS engines, which operate at
+the direct output frequency of the RFSoC converters (up to several GHz).  The
+waveform generated for qubit readout has the form
+\begin{equation}
+  s(t) = A \cdot \text{env}(t) \cdot \cos(2\pi f_r t + \phi_\text{res}),
+\end{equation}
+where $\text{env}(t)$ is the pulse envelope (constant, Gaussian, DRAG, etc.),
+$f_r$ is programmed directly into the DDS frequency register, and
+$\phi_\text{res}$ is the phase correction from calibration.  The only noise
+sources are digital: quantisation, clock jitter, and DDS phase truncation spurs —
+all of which are deterministic and can be mitigated by appropriate filtering and
+sample-rate choice.
+
+\subsection{Decimated vs. Accumulated Readout}
+\label{subsec:decimated_vs_accum}
+
+After the ADC samples the incoming signal, the \QICK{} readout block demodulates
+it by multiplying with the NCO reference tone and low-pass filtering.  Two output
+modes are available:
+
+\paragraph{Decimated readout.}
+Stores the full time-domain I/Q waveform over the readout window (e.g.\ 1000
+samples).  This is essential for setup: it reveals when the readout pulse arrives
+relative to the trigger (\texttt{adc\_trig\_offset}), whether the integration
+window is correctly positioned, and whether the signal shape is as expected.  The
+single-shot noise is $\sim$\SI{1.9}{ADU} RMS.
+
+\paragraph{Accumulated readout.}
+The FPGA sums all ADC samples in the readout window into a single $(I, Q)$ pair in
+hardware.  With $N_\text{reps}$ repetitions, the noise falls as $1/\sqrt{N_\text{reps}}$:
+\begin{equation}
+  \sigma_\text{accum} = \frac{\sigma_\text{single}}{\sqrt{N_\text{reps}}}
+  \approx \frac{\SI{1.9}{ADU}}{\sqrt{N_\text{reps}}}.
+\end{equation}
+At $N_\text{reps} = 1000$ this yields $\sigma \approx \SI{0.14}{ADU}$ — a
+$31.6\times$ noise reduction.  All experimental data in this thesis use
+accumulated readout once the timing and phase have been verified in decimated mode.
+
+The practical workflow is therefore: (1) use \texttt{acquire\_decimated()} to find
+the correct \texttt{adc\_trig\_offset} and verify signal quality; (2) switch to
+\texttt{acquire()} (accumulated) for all data-taking.
+
+\subsection{Resonator Spectroscopy}
+\label{subsec:spectroscopy}
+
+The resonator bare frequency $\omega_r$ and linewidth $\kappa$ are found by
+sweeping the probe frequency around the estimated resonator frequency and measuring
+the transmitted or reflected IQ amplitude.  In \QICK{}, there are two sweep
+strategies:
+
+\paragraph{Fast sweep (\texttt{RAveragerProgram}).}
+The tProcessor increments the DAC DDS frequency register at each experiment step
+via the \texttt{update()} method.  This approach is fast because the FPGA handles
+all steps with no Python round-trips.  However, the ADC NCO frequency is set via
+the ARM AXI bus and cannot be updated by the tProcessor.  For resonator
+spectroscopy, both the DAC and ADC frequencies must track together; this is not
+achievable with the fast method.
+
+\paragraph{Slow sweep (Python outer loop).}
+A \texttt{for} loop in Python updates both the DAC generator frequency and the
+ADC readout frequency at each step.  The per-step overhead is a few milliseconds
+(dominated by network round-trips in remote mode), but this approach can sweep
+\emph{any} parameter, including the ADC NCO.  This is the correct approach for
+resonator spectroscopy.
+
+In practice:
+\begin{minted}[fontsize=\small,linenos]{python}
+freqs = np.linspace(f_start, f_stop, n_points)
+amps  = []
+for f in freqs:
+    cfg["pulse_freq"] = f
+    prog = AveragerProgram(soccfg, cfg)
+    iq   = prog.acquire(soc, load_pulses=True, progress=False)
+    amps.append(np.abs(iq[0][0][0] + 1j*iq[0][0][1]))
+\end{minted}
+
+The resonator frequency is identified as the dip (reflection) or peak
+(transmission) in the swept amplitude response.
+
+\subsection{Multiplexed Readout}
+\label{subsec:multiplex}
+
+For multi-qubit systems, simultaneous readout of several qubits on the same
+physical line requires \emph{multiplexed readout}: a broadband probe signal
+containing multiple tones at the individual resonator frequencies $\{f_{r,k}\}$.
+The \QICK{} framework supports this through a \emph{Polyphase Filter Bank} (PFB)
+readout mode.
+
+A PFB is a bank of digital bandpass filters implemented as a single, efficient DSP
+operation (polyphase decomposition of a prototype filter followed by an FFT).  It
+takes the broadband ADC stream and simultaneously demodulates $N$ equally-spaced
+frequency channels, analogous to a digital spectrum analyser.  Advantages over
+the single-tone DDS approach include:
+\begin{itemize}
+  \item No need to retune the ADC NCO between qubits.
+  \item Computational cost scales as $O(N \log N)$ rather than $O(N)$ independent
+        demodulators.
+  \item Sidesteps the ADC-frequency-sweep limitation: each PFB output channel is
+        a fixed digital filter, not a tunable DDS.
+\end{itemize}
+
+\todo{Describe PFB implementation status and preliminary results, if available.}

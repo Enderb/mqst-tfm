@@ -1,0 +1,28 @@
+# LaTeX build artefacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+
+# minted cache
+_minted-*/
+
+# Build output (keep the pdf if you want to commit it, remove this line)
+*.pdf
+
+# Editor temp files
+*.swp
+*~
+.DS_Store

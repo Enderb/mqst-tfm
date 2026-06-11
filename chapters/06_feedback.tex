@@ -1,0 +1,142 @@
+%% Chapter 6 — Real-Time Feedback and Mid-Circuit Measurement
+\section{Real-Time Feedback and Mid-Circuit Measurement}
+\label{sec:feedback}
+
+A key motivation for FPGA-based control is the ability to execute
+\emph{real-time} conditional logic: perform a measurement, make a decision, and
+apply a corrective pulse — all on the FPGA, without a round-trip to the host CPU.
+This section describes the tProcessor-64 instruction set, demonstrates the
+conditional branching primitive, and outlines the active qubit reset protocol.
+
+\subsection{tProcessor Architecture}
+
+The tProcessor-64 is a soft-processor synthesised in the FPGA fabric.  It
+executes a custom instruction set tailored to pulse generation and readout
+sequencing.  Key features include:
+\begin{itemize}
+  \item \textbf{Register file}: 32 general-purpose 64-bit registers per channel
+        page, plus cross-page registers for inter-channel synchronisation.
+  \item \textbf{Pulse triggers}: dedicated instructions that fire DAC signal
+        generators or arm ADC acquisition windows.
+  \item \textbf{Timing instructions}: \texttt{synci} (advance tProcessor time
+        without touching channel timelines), \texttt{sync\_all} (synchronise all
+        channels), \texttt{wait\_all} (stall until all readout windows close).
+  \item \textbf{Conditional branch}: \texttt{condj page, reg\_a, op, reg\_b, label}
+        jumps to \texttt{label} if \texttt{reg\_a op reg\_b} is true.
+\end{itemize}
+
+All branching targets are resolved at \emph{compile time} by the Python
+assembler: Python's sequential execution of \texttt{body()} builds an
+instruction list, \texttt{label()} records the current position as a named
+address, and the assembler backpatches jump targets before loading the program
+onto the tProcessor.  By the time the program runs, only integer addresses exist;
+there is no runtime symbol table.
+
+\subsection{Conditional Logic Demonstration}
+
+The \QICK{} Demo 3 notebook demonstrates the core conditional-branch primitive:
+\begin{minted}[fontsize=\small,linenos]{python}
+def body(self):
+    cfg = self.cfg
+    self.trigger(adcs=[cfg["ro_ch"]],
+                 adc_trig_offset=cfg["adc_trig_offset"])
+    # condj: jump to SKIP_PULSE if number < threshold
+    self.condj(0, 2, '<', 1, 'SKIP_PULSE')
+    self.pulse(ch=cfg["res_ch"])          # skipped if condition true
+    self.label('SKIP_PULSE')
+    self.wait_all()
+    self.sync_all(self.us2cycles(cfg["relax_delay"]))
+\end{minted}
+
+Registers 1 and 2 are pre-loaded with the threshold and the test value via
+\texttt{regwi}.  When \texttt{number=100, threshold=50}: the condition
+\texttt{100 < 50} is false, the pulse fires, and the ADC captures a loopback
+signal.  When \texttt{number=10, threshold=50}: the condition is true, the pulse
+is skipped, and the ADC trace is flat noise.
+
+\paragraph{Timing subtlety.}
+Inside a \texttt{body()} with an open ADC acquisition window, \texttt{synci}
+must be used to advance time between pulses, not \texttt{sync\_all}.
+\texttt{sync\_all} advances all channel timelines to the furthest point, which
+is the end of the ADC window; subsequent pulses would then be scheduled after
+the window has closed.  \texttt{synci} advances only the tProcessor's internal
+counter, leaving the ADC timeline undisturbed.
+
+\subsection{$\pi$ Pulse Calibration}
+\label{subsec:pi_pulse}
+
+A $\pi$ pulse rotates the qubit state by 180° on the Bloch sphere:
+$\ket{0} \to \ket{1}$ and $\ket{1} \to \ket{0}$.  It is a fundamental primitive
+for qubit initialisation (active reset) and single-qubit gates.
+
+The $\pi$ pulse amplitude is calibrated with a \emph{Rabi experiment}: the qubit
+drive pulse amplitude is swept from zero, and the readout signal oscillates
+between the $\ket{0}$ and $\ket{1}$ IQ clusters as the qubit is driven through
+successive half-turns on the Bloch sphere.  The first amplitude at which the
+signal crosses from the $\ket{0}$ cluster to the $\ket{1}$ cluster corresponds to
+the $\pi$ pulse.  The Rabi sequence is:
+\begin{enumerate}
+  \item Prepare qubit in $\ket{0}$ (wait $\gg T_1$).
+  \item Apply qubit drive pulse at frequency $\omega_{01}$ with variable amplitude
+        $A$ and fixed duration.
+  \item Read out via the resonator.
+\end{enumerate}
+
+Note that the qubit drive tone is at $\omega_{01}$ (the qubit transition
+frequency, typically \SIrange{5}{7}{\giga\hertz} for fluxonium), which is
+distinct from the resonator frequency $\omega_r$ used for readout.  Two separate
+generator channels are therefore required: one for readout, one for qubit control.
+
+\subsection{Active Qubit Reset}
+\label{subsec:active_reset}
+
+Active reset is the process of rapidly returning the qubit to $\ket{0}$ by
+measuring its state and applying a corrective $\pi$ pulse only if the qubit is
+found in $\ket{1}$:
+\begin{enumerate}
+  \item \textbf{Dispersive readout}: fire the readout tone and acquire the
+        accumulated IQ result.
+  \item \textbf{Thresholding}: the readout firmware compares the IQ result against
+        a pre-calibrated threshold and writes a binary decision (0 or 1) into a
+        tProcessor register.
+  \item \textbf{Conditional $\pi$ pulse}: \texttt{condj} checks the decision
+        register.  If the qubit is in $\ket{1}$, a calibrated $\pi$ pulse is
+        applied on the qubit drive channel.  Otherwise, the pulse is skipped.
+  \item \textbf{Wait}: allow any residual photons in the resonator to decay before
+        starting the experiment.
+\end{enumerate}
+
+Because the entire decision-to-pulse path runs inside the tProcessor, the latency
+between completing the readout window and firing the corrective pulse is
+determined solely by FPGA clock cycles.  For the ZCU216 operating at a
+\SI{384}{\mega\hertz} fabric clock, this latency is of order tens of nanoseconds
+— orders of magnitude faster than a software round-trip.
+
+\subsection{Latency Budget}
+
+Table~\ref{tab:latency} gives an estimated latency breakdown for the active reset
+sequence.
+
+\begin{table}[ht]
+\centering
+\caption{Estimated latency contributions in the active reset loop.}
+\label{tab:latency}
+\begin{tabular}{lrl}
+\toprule
+Stage & Latency & Notes \\
+\midrule
+Readout pulse duration     & \SIrange{0.5}{2}{\micro\second}   & Depends on $\kappa$ \\
+ADC integration window     & \SIrange{0.5}{2}{\micro\second}   & \\
+FPGA decision (threshold)  & $\sim$\SI{10}{\nano\second}        & tProcessor cycles \\
+Conditional branch         & $\sim$\SI{3}{\nano\second}         & 1 tProc cycle \\
+$\pi$ pulse duration       & \SIrange{50}{500}{\nano\second}    & Depends on $T_1$ \\
+\midrule
+Total (excl. readout)      & $<$\SI{1}{\micro\second}           & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The dominant latency is the readout integration window; the digital decision and
+conditional fire together contribute less than \SI{100}{\nano\second}, well within
+qubit coherence times of \SIrange{10}{100}{\micro\second} for state-of-the-art
+fluxonium devices.

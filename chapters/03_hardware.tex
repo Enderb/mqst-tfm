@@ -1,0 +1,122 @@
+%% Chapter 3 — Hardware Platform
+\section{Hardware Platform}
+\label{sec:hardware}
+
+\subsection{Xilinx ZCU216 RFSoC}
+
+The Xilinx Zynq UltraScale+ ZCU216 evaluation board is built around an RFSoC
+device that integrates, on a single chip, a quad-core ARM Cortex-A53 processor,
+an FPGA fabric, and 16 RF-DAC and 16 RF-ADC channels with sampling rates up to
+\SI{9.85}{\giga S/s} and \SI{2.5}{\giga S/s}, respectively.  Operating at
+12-bit and 14-bit resolution, the converters can directly synthesise and capture
+signals in the \SIrange{0}{6}{\giga\hertz} range without an external frequency
+up-conversion stage, provided the analogue signal chain is suitably conditioned.
+
+The board runs the PYNQ Linux distribution, which exposes the FPGA fabric and the
+converters through Python libraries, making it straightforward to implement and
+iterate on firmware/software stacks.  Table~\ref{tab:zcu216} summarises the key
+specifications relevant to this thesis.
+
+\begin{table}[ht]
+\centering
+\caption{Selected ZCU216 specifications relevant to qubit readout.}
+\label{tab:zcu216}
+\begin{tabular}{lll}
+\toprule
+Parameter & Value & Note \\
+\midrule
+DAC channels       & 16                      & Differential GSPS \\
+DAC rate           & up to \SI{9.85}{GS/s}   & Per channel \\
+DAC resolution     & 14 bit                  & \\
+ADC channels       & 16                      & Differential GSPS \\
+ADC rate           & up to \SI{2.5}{GS/s}    & Per channel \\
+ADC resolution     & 12 bit                  & \\
+FPGA fabric        & UltraScale+             & 930k LUT \\
+Processor          & 4$\times$ Cortex-A53    & \SI{1.5}{GHz} \\
+Operating system   & PYNQ Linux              & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{QICK Software and Firmware}
+\label{subsec:qick_stack}
+
+The Quantum Instrumentation Control Kit (\QICK)~\cite{Stefanazzi2022} is an
+open-source framework originally developed at Fermilab that turns an RFSoC board
+into a self-contained qubit controller.  It consists of two layers:
+
+\paragraph{Firmware.}
+A set of Vivado IP blocks synthesised and placed onto the FPGA fabric, comprising:
+\begin{itemize}
+  \item \textbf{Signal generators}: DDS-based waveform engines that drive the
+        DACs with arbitrary envelopes, constant tones, or flat-top pulses.
+        Generator 6 (physical port 2\_231 on the ZCU216) is used as the primary
+        readout generator throughout this work.
+  \item \textbf{Readout blocks}: ADC-side DDS demodulators that down-convert the
+        received signal to baseband.  Each readout block provides both a decimated
+        output (time-domain I/Q waveform) and an accumulation buffer (averaged I/Q
+        pair).  Readout channel 0 (ADC port 0\_226) corresponds to the first ADC
+        pair on the XM655 breakout.
+  \item \textbf{tProcessor-64}: a soft-processor that orchestrates pulse timing
+        with nanosecond precision.  It executes a custom instruction set including
+        direct memory writes (\texttt{memri}), register arithmetic (\texttt{mathi},
+        \texttt{regwi}), conditional branches (\texttt{condj}), and pulse triggers.
+        The ZCU216 uses the 64-bit variant of the tProcessor, which extends the
+        original 32-bit design with wider arithmetic and richer branching.
+\end{itemize}
+
+\paragraph{Software.}
+A Python library (the \texttt{qick} package) that runs on the ARM core and
+exposes high-level classes for writing and running experiments:
+\begin{itemize}
+  \item \texttt{QickSoc}: instantiates the full hardware stack, loads the
+        bitstream, and provides access to the converters and tProcessor.
+  \item \texttt{QickProgram} / \texttt{AveragerProgram} / \texttt{RAveragerProgram}:
+        abstractions for writing measurement sequences at increasing levels of
+        automation.  \texttt{RAveragerProgram} enables FPGA-internal parameter
+        sweeps via the tProcessor's \texttt{update()} hook, avoiding Python
+        overhead between experiment points.
+  \item Remote operation: a persistent Pyro4 server running on the board makes it
+        possible to control the board from a laptop over a standard network
+        connection, without reinitialising the FPGA between notebook sessions.
+        This design also preserves the phase calibration across reconnects.
+\end{itemize}
+
+\subsection{XM655 Analogue Front-End Module}
+\label{subsec:xm655}
+
+The ZCU216's RF converters use differential signalling on High-Density (HD)
+headers (JHC3 and JHC5 on the board).  Most laboratory equipment, however, uses
+single-ended SMA connectors.  The XM655 module is Xilinx's daughter-card
+solution: it provides BALUN (balanced-to-unbalanced) transformers that convert the
+differential DAC outputs and ADC inputs to/from single-ended SMA ports, along with
+optional filtering.
+
+Key constraints introduced by the XM655 in this work:
+\begin{itemize}
+  \item The BALUNs on the XM655 cover the frequency range \SIrange{10}{1000}{\mega\hertz}.
+        Resonator frequencies above \SI{1}{\giga\hertz} require connections
+        directly on the HD header pins using pigtail cables and separate discrete
+        BALUNs.
+  \item Only a limited number of BALUN-equipped SMA ports are available in the
+        \SIrange{3}{6}{\giga\hertz} band, constraining the number of simultaneous
+        readout tones.
+\end{itemize}
+
+The loopback path used for calibration experiments consists of:
+DAC port 2\_231 (JHC3) $\to$ HD2-SMA pigtail $\to$ BALUN $\to$ SMA cable
+$\to$ BALUN $\to$ HD2-SMA pigtail $\to$ ADC port 0\_226 (JHC5).
+
+Figure~\ref{fig:system_topology} shows the high-level signal flow from the
+tProcessor to the qubit chip and back.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\columnwidth]{figures/system_topology}
+  \caption{System topology. The tProcessor generates pulse sequences that drive
+           the DAC signal generators; the analogue signal passes through the XM655
+           front-end to the qubit chip. The reflected/transmitted readout tone is
+           routed through the cryogenic chain back to the ADC via the XM655.
+           \todo{Replace with actual diagram.}}
+  \label{fig:system_topology}
+\end{figure}

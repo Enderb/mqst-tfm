@@ -1,0 +1,119 @@
+%% Chapter 2 — Theoretical Background
+\section{Theoretical Background}
+\label{sec:background}
+
+\subsection{Superconducting Qubits}
+
+Superconducting qubits are anharmonic LC oscillators whose nonlinearity is
+provided by one or more Josephson junctions~\cite{Krantz2019}.  The Josephson
+junction acts as a nonlinear inductor with energy $E_J\cos\hat{\varphi}$, where
+$\hat{\varphi}$ is the superconducting phase across the junction and $E_J$ is the
+Josephson energy.  Combined with a shunt capacitance $C$ (charging energy
+$E_C = e^2/2C$), the system forms an artificial atom with a discrete, anharmonic
+spectrum that can be addressed at the transition frequency $\omega_{01}$.
+
+\paragraph{Transmon.}
+The transmon~\cite{Koch2007} operates deep in the regime $E_J \gg E_C$, making
+its energy levels insensitive to charge noise.  Its transition frequency lies
+typically in the \SIrange{4}{8}{\giga\hertz} range, and its anharmonicity
+$\alpha = \omega_{12} - \omega_{01}$ is of order $-E_C/\hbar$, typically a few
+hundred \si{\mega\hertz}.
+
+\paragraph{Fluxonium.}
+The fluxonium~\cite{Manucharyan2009} replaces the transmon's large capacitor with
+a superinductance $L$ (inductive energy $E_L = (\Phi_0/2\pi)^2/L$, where
+$\Phi_0$ is the flux quantum), threading the loop with an external flux $\Phi_z$.
+The resulting double-well potential can be tuned between a plasmon regime (near
+$\Phi_z = 0$) and a fluxon regime (near $\Phi_z = \Phi_0/2$).  Fluxonium qubits
+offer long coherence times and are of particular interest because their readout
+landscape is richer: at half-integer flux bias the two wells become degenerate and
+the qubit transition frequency passes through zero, enabling so-called
+\emph{Which-Well Readout} (WWR)~\cite{Blais2021}.
+
+\subsection{Circuit Quantum Electrodynamics}
+
+In the circuit QED (cQED) architecture~\cite{Blais2004}, a qubit is coupled
+dispersively to a microwave resonator.  The resonator acts both as a readout bus
+and as a filter that protects the qubit from radiative decay into the measurement
+chain.  The full Hamiltonian (setting $\hbar=1$) is
+\begin{equation}
+  \hat{H} = \hat{H}_\text{qubit}
+           + \omega_r \hat{a}^\dagger \hat{a}
+           + g\,\hat{n}_q (\hat{a} + \hat{a}^\dagger),
+\label{eq:jaynes_cummings}
+\end{equation}
+where $\omega_r$ is the resonator frequency, $\hat{a}$ ($\hat{a}^\dagger$) is the
+resonator annihilation (creation) operator, $g$ is the qubit--resonator coupling
+strength, and $\hat{n}_q$ is the relevant qubit operator (charge for capacitive
+coupling).
+
+\subsection{Dispersive Readout}
+\label{subsec:dispersive}
+
+When $|g_{ij}| \ll |\omega_{ij} - \omega_r|$ for all relevant qubit transitions
+$i \leftrightarrow j$, second-order perturbation theory in $g$ yields a
+qubit-state-dependent shift of the resonator frequency~\cite{Blais2021}:
+\begin{equation}
+  \hat{H}_\text{disp} = \left(\omega_r + \sum_i \chi_i \ket{i}\bra{i}\right)
+                         \hat{a}^\dagger \hat{a},
+\quad
+  \chi_i = \sum_{j \neq i}
+    \frac{|g_{ij}|^2}{\omega_{ij} - \omega_r}
+  - \frac{|g_{ji}|^2}{\omega_{ji} - \omega_r},
+\label{eq:dispersive_shift}
+\end{equation}
+where $g_{ij} = \braket{i|g\,\hat{n}_q|j}$ and $\omega_{ij} = \omega_j -
+\omega_i$.  The textbook two-level dispersive shift $\chi = \chi_1 - \chi_0$
+follows from truncating to the computational subspace, but for fluxonium-class
+qubits the straddling regime (where $|g_{12}| \gg |g_{01}|$) makes this
+truncation unsafe; higher levels must be included~\cite{Koch2007}.
+
+In practice, one probes the resonator at its bare frequency $\omega_r$ and
+observes a state-dependent phase shift of the transmitted or reflected signal.
+For a single-qubit system, the resonator sits at $\omega_r + \chi_0$ when the
+qubit is in $\ket{0}$ and at $\omega_r + \chi_1$ when in $\ket{1}$, resulting
+in an IQ-plane separation that grows with the dimensionless cavity pull
+$2|\chi|/\kappa$, where $\kappa$ is the resonator linewidth~\cite{Blais2004}.
+
+\paragraph{Which-Well Readout.}
+For a double-well fluxonium biased off degeneracy, the eigenstates are
+approximately localised in the left ($\ket{L}$) or right ($\ket{R}$) well and
+carry definite persistent-current sign.  Because the two wells host different
+local spectra, the dispersive shift evaluated on the ground state of each well
+differs, and the half-splitting
+$\chi_\text{WWR} = \tfrac{1}{2}(\chi_R - \chi_L)$
+sets the WWR contrast~\cite{Blais2021}.
+
+\subsection{Direct Digital Synthesis}
+\label{subsec:dds}
+
+Direct Digital Synthesis (DDS) generates analogue waveforms by accumulating a
+phase register at a fixed clock rate and mapping the instantaneous phase value to
+a digital amplitude via a look-up table.  A DDS numerically controlled oscillator
+(NCO) produces a tone at frequency
+\begin{equation}
+  f_\text{out} = \frac{f_\text{clk} \cdot \Delta\phi}{2^N},
+\end{equation}
+where $f_\text{clk}$ is the system clock, $\Delta\phi$ is the phase increment per
+clock cycle, and $N$ is the bit width of the phase accumulator.  DDS avoids the
+spur and image problems associated with analogue IQ mixers because all
+imperfections are digital and predictable.  In \QICK{}, the tProcessor drives DDS
+engines on both the DAC (transmit) and ADC (receive) sides, enabling phase-locked
+signal generation and coherent demodulation~\cite{Stefanazzi2022}.
+
+\subsection{State Discrimination}
+
+Following dispersive readout, the measured IQ quadrature amplitudes $(I, Q)$ form
+two clusters in the complex plane — one for $\ket{0}$ and one for $\ket{1}$.
+Single-shot state discrimination assigns each measurement to one of these
+clusters.  The simplest approach is a linear threshold: a hyperplane in the IQ
+plane that minimises the total misclassification probability, which for Gaussian
+clusters of equal covariance is the perpendicular bisector of the line connecting
+the centroids~\cite{Gambetta2007}.  The single-shot readout fidelity is
+\begin{equation}
+  \mathcal{F} = 1 - \frac{1}{2}\left(p(1|0) + p(0|1)\right),
+\end{equation}
+where $p(1|0)$ is the probability of assigning $\ket{1}$ given that the qubit was
+prepared in $\ket{0}$, and vice versa.  More sophisticated classifiers — quadratic
+discriminant analysis, neural networks — can improve fidelity when the clusters are
+non-Gaussian or when multi-level leakage is present.

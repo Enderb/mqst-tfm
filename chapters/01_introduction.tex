@@ -1,0 +1,80 @@
+%% Chapter 1 — Introduction
+\section{Introduction}
+\label{sec:introduction}
+
+Quantum computing holds the promise of solving classically intractable problems
+in optimisation, simulation, and cryptography.  Among the leading hardware
+platforms, superconducting qubits stand out for their relatively fast gate times,
+high coherence, and compatibility with existing microwave engineering
+infrastructure~\cite{Krantz2019}.  A central challenge that must be overcome on
+the road to fault-tolerant operation is \emph{qubit state measurement}: reading
+out the quantum information stored in a qubit quickly, accurately, and with
+minimal back-action on unmeasured qubits.
+
+\subsection{Motivation}
+
+Classical error correction requires measurements that are not only high-fidelity
+but also \emph{fast} relative to qubit coherence times, and — crucially for
+quantum error correction — it requires \emph{mid-circuit measurements}: the
+ability to measure ancilla qubits in the middle of a quantum algorithm, use the
+result to apply corrections in real time, and continue the computation.  This
+capability demands a control electronics stack capable of making a state
+discrimination decision on-chip in nanoseconds to microseconds, not the
+milliseconds typical of host-software processing.
+
+Field-Programmable Gate Arrays (FPGAs) offer a compelling solution.  Their
+deterministic, sub-microsecond timing enables real-time signal processing close
+to the qubit hardware.  The Quantum Instrumentation Control Kit
+(\QICK)~\cite{Stefanazzi2022} is an open-source FPGA firmware and software
+framework that turns Xilinx Radio-Frequency System-on-Chip (RFSoC) boards into
+complete qubit controllers, combining fast digital-to-analogue converters (DACs),
+analogue-to-digital converters (ADCs), and a tightly integrated soft-processor
+into a single compact platform.
+
+\subsection{Goals and Contributions}
+
+Despite the availability of \QICK{}, assembling a \emph{general-purpose} readout
+pipeline from an uncharacterised board to a working single-shot state
+discriminator requires integrating many layers: physical wiring, FPGA
+configuration, phase calibration, signal optimisation, and machine-learning
+post-processing.  The lack of a unified reference implementation makes this
+process time-consuming and error-prone, especially for multi-qubit scenarios.
+
+This thesis makes the following contributions:
+
+\begin{enumerate}
+  \item \textbf{Full-stack integration} of the \QICK{} framework on a Xilinx
+        ZCU216 RFSoC board with an XM655 analogue front-end module, including
+        remote operation via a persistent Pyro4 server.
+
+  \item \textbf{Phase-coherent readout calibration}: a systematic procedure for
+        measuring and compensating the random DAC–ADC phase offset that arises at
+        every board power-on, enabling reproducible IQ measurements across
+        sessions.
+
+  \item \textbf{Readout data-path design}: a characterisation of the trade-offs
+        between decimated and accumulated readout modes and a complete resonator
+        spectroscopy workflow suitable for both single-qubit and multiplexed
+        measurements.
+
+  \item \textbf{Real-time feedback primitives}: implementation and demonstration
+        of conditional pulse logic on the tProcessor, establishing the active qubit
+        reset and mid-circuit measurement infrastructure needed for dynamic
+        quantum circuits.
+
+  \item \textbf{ML-assisted state discrimination}: evaluation of lightweight
+        machine-learning classifiers for on-FPGA deployment, balancing fidelity,
+        latency, and resource consumption.
+\end{enumerate}
+
+\subsection{Thesis Outline}
+
+Section~\ref{sec:background} reviews the relevant theory of superconducting
+qubits, circuit quantum electrodynamics (cQED), and dispersive readout.
+Section~\ref{sec:hardware} describes the hardware platform.
+Section~\ref{sec:integration} covers system integration and calibration.
+Section~\ref{sec:readout} presents the readout architecture and measurement
+workflows.  Section~\ref{sec:feedback} describes real-time feedback and
+mid-circuit measurement.  Section~\ref{sec:ml} evaluates machine-learning-based
+state discrimination.  Section~\ref{sec:conclusions} summarises the results and
+outlines future directions.
