@@ -19,9 +19,6 @@
 # minted cache
 _minted-*/
 
-# Build output (keep the pdf if you want to commit it, remove this line)
-*.pdf
-
 # Editor temp files
 *.swp
 *~
