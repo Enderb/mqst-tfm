@@ -4,9 +4,11 @@
 
 \subsection{Summary}
 
-This thesis has presented a general-purpose readout architecture for
-superconducting qubits, built on the \QICK{} framework and the Xilinx ZCU216
-RFSoC platform at Qilimanjaro Quantum Tech.
+This thesis has documented the setup, characterisation, and initial evaluation of
+a \QICK{}-based readout architecture for superconducting qubits on a Xilinx
+ZCU216 RFSoC platform at Qilimanjaro Quantum Tech, and has explored the design of
+a machine-learning-assisted state discrimination pipeline using existing
+experimental data.
 
 The main contributions are:
 
@@ -30,33 +32,56 @@ The main contributions are:
         1000 repetitions.  The resonator spectroscopy workflow was established for
         both single-qubit and multiplexed scenarios.
 
-  \item \textbf{Real-time feedback}: The tProcessor-64 conditional branch
-        (\texttt{condj}) was demonstrated as the core primitive for mid-circuit
-        measurement.  An active qubit reset sequence was designed, combining
-        dispersive readout, thresholding, and a calibrated $\pi$ pulse, with a
-        digital decision-to-fire latency below \SI{100}{\nano\second}.
+  \item \textbf{Real-time feedback primitives}: The tProcessor-64 conditional
+        branch (\texttt{condj}) was demonstrated in loopback as the core primitive
+        for mid-circuit measurement.  An active qubit reset sequence was designed,
+        combining dispersive readout, thresholding, and a calibrated $\pi$ pulse,
+        with an estimated digital decision-to-fire latency below
+        \SI{100}{\nano\second}.
 
-  \item \textbf{ML-assisted discrimination}: Linear Discriminant Analysis, QDA,
-        and a small neural network were evaluated as state classifiers.
-        \todo{Summarise actual experimental findings once measurements are
-        complete.}
+  \item \textbf{ML-assisted discrimination}: A complete offline discrimination
+        pipeline was developed and evaluated on existing experimental SSRO data.
+        On integrated IQ data, LDA achieves an assignment fidelity of 90.6\%
+        ($\ket{0}$: 94.0\%, $\ket{1}$: 87.3\%), and a systematic grid search over
+        20 MLP architectures confirms that no nonlinear classifier improves on
+        this — a consequence of the near-Gaussian, linearly separable IQ blob
+        structure.  The $\ket{1}$ accuracy deficit is identified as the signature
+        of $T_1$ relaxation mid-shot, which integration-based methods cannot
+        recover.  A lightweight 1D CNN (953 parameters) trained on
+        physically-grounded synthetic raw traces achieves 99.4\% overall fidelity
+        and 98.4\% accuracy on relaxation shots, compared to 44.3\% for LDA on
+        the same shots.  FPGA deployment of the CNN was not achieved within the
+        scope of this work; Section~\ref{subsec:deployment_path} outlines the
+        concrete path toward it.
 \end{enumerate}
 
 \subsection{Outlook}
 
-Several natural extensions of this work are planned:
+Several natural extensions of this work follow directly from the results above:
+
+\paragraph{CNN retraining on real raw traces.}
+The CNN results in Chapter~\ref{sec:ml} are based on synthetic traces anchored to
+real IQ statistics.  The first experimental priority is to collect a real
+\texttt{SSRO\_raw.h5} dataset from the ZCU216 using \texttt{acquire\_decimated},
+retrain the CNN, and validate that the $T_1$-relaxation recovery generalises to
+real data.  The synthetic $T_1$ parameter should be recalibrated to match the
+measured $\ket{1}$ error rate ($\approx 12.75\%$, implying $T_1 \approx
+1200$--$1500$ samples rather than the 600 used in simulation) before the
+synthetic-to-real transfer is attempted.
+
+\paragraph{On-FPGA classifier deployment.}
+With real raw traces in hand, the CNN can be exported via \texttt{hls4ml} and
+synthesised as a fixed-point IP block in the QICK bitstream, as described in
+Section~\ref{subsec:deployment_path}.  This closes the active-reset feedback loop
+at full speed: the tProcessor receives a binary decision from the CNN IP block
+within \SI{100}{\nano\second}--\SI{200}{\nano\second}, without a software
+round-trip.
 
 \paragraph{Multi-qubit readout.}
 The current architecture supports a single readout tone.  Extending to
 multiplexed readout via the \QICK{} PFB firmware would allow simultaneous readout
 of all qubits in Qilimanjaro's multi-qubit chips, which is a prerequisite for
 running quantum error-correction cycles.
-
-\paragraph{On-FPGA classifier deployment.}
-The machine-learning classifiers developed in Chapter~\ref{sec:ml} are currently
-evaluated in software.  Their deployment as fixed-point FPGA IP blocks — so that
-the tProcessor receives a binary decision within a single clock cycle — is the
-next step toward closing the active-reset feedback loop at full speed.
 
 \paragraph{Integration with Qilimanjaro's software stack.}
 The \QICK{}-based readout layer developed here should be integrated with
