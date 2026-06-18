@@ -24,12 +24,20 @@ milliseconds typical of host-software processing.
 
 Field-Programmable Gate Arrays (FPGAs) offer a compelling solution.  Their
 deterministic, sub-microsecond timing enables real-time signal processing close
-to the qubit hardware.  The Quantum Instrumentation Control Kit
-(\QICK)~\cite{Stefanazzi2022} is an open-source FPGA firmware and software
-framework that turns Xilinx Radio-Frequency System-on-Chip (RFSoC) boards into
-complete qubit controllers, combining fast digital-to-analogue converters (DACs),
-analogue-to-digital converters (ADCs), and a tightly integrated soft-processor
-into a single compact platform.
+to the qubit hardware.  Commercial control platforms such as Qblox, Zurich
+Instruments, and Quantum Machines already exploit this, providing on-FPGA state
+discrimination within closed, proprietary firmware stacks.  However, closed
+firmware precludes custom signal processing pipelines: researchers cannot inject
+bespoke algorithms — including machine-learning classifiers — into the real-time
+decision path.  The Quantum Instrumentation Control Kit
+(\QICK)~\cite{Stefanazzi2022} addresses this gap as an open-source FPGA firmware
+and software framework that turns Xilinx Radio-Frequency System-on-Chip (RFSoC)
+boards into complete qubit controllers, combining fast digital-to-analogue
+converters (DACs), analogue-to-digital converters (ADCs), and a tightly
+integrated soft-processor into a single compact platform.  Full access to the
+programmable logic fabric makes it possible to define the entire readout and
+discrimination pipeline, including the integration of custom ML models, in a way
+that closed commercial firmware does not permit.
 
 \subsection{Goals and Contributions}
 
@@ -62,9 +70,12 @@ This thesis makes the following contributions:
         reset and mid-circuit measurement infrastructure needed for dynamic
         quantum circuits.
 
-  \item \textbf{ML-assisted state discrimination}: evaluation of lightweight
-        machine-learning classifiers for on-FPGA deployment, balancing fidelity,
-        latency, and resource consumption.
+  \item \textbf{ML-assisted state discrimination}: offline design and evaluation
+        of a lightweight ML discrimination pipeline on existing experimental SSRO
+        data, establishing that LDA is near-optimal for integrated IQ inputs, and
+        demonstrating via synthetic raw traces that a 1D CNN recovers
+        $T_1$-relaxation shots irrecoverable by integration-based methods.  A
+        concrete path toward FPGA deployment is outlined.
 \end{enumerate}
 
 \subsection{Thesis Outline}
