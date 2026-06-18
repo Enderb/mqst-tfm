@@ -18,10 +18,21 @@ All from `sklearn` except the PyTorch CNN:
 |---|---|---|
 | LDA (baseline) | `LinearDiscriminantAnalysis` | Optimal for equal-covariance Gaussians; 2 DSP slices on FPGA |
 | QDA | `QuadraticDiscriminantAnalysis` | Handles unequal covariances; 4 multiply-accumulates |
-| MLP | `MLPClassifier(hidden_layer_sizes=(H,), activation='relu')` | Grid-searched over H ∈ {4,8,16,32} |
+| MLP | `MLPClassifier(hidden_layer_sizes=(H,), activation='relu')` | Grid-searched over H ∈ {4,8,16,32}; 20 configs total |
 | 1D CNN | PyTorch `Conv1d` on raw traces | Requires `SSRO_raw.h5`; see `SSRO_synthetic_CNN.ipynb` |
 
-**Finding**: No MLP architecture improves on LDA when the input is a single integrated (I, Q) pair per shot. The IQ blobs are well-described by a linear Gaussian model. CNNs on raw traces can potentially improve fidelity by exploiting time-domain structure (T₁ relaxation events).
+## Confirmed results (do not change without re-running notebooks)
+
+| Classifier | Fidelity | Detail |
+|---|---|---|
+| LDA | **0.906** | |0⟩: 94.0 %, |1⟩: 87.3 % |
+| QDA | **0.9062** | Essentially equal to LDA — to be added in ch. 07 |
+| MLP arch search | all within **0.898 ± 0.013** | 20 configs; no improvement over LDA on integrated IQ |
+| 1D CNN | **0.994** overall | Relaxation shots: 98.4 % vs 44.3 % (LDA); 953 parameters |
+
+**Key finding**: No MLP architecture improves on LDA when the input is a single integrated (I, Q) pair per shot. The IQ blobs are well-described by a linear Gaussian model (Mahalanobis distance ≈ 2.4 between class centroids). The LDA optimality argument is geometric — Mahalanobis separation — not solely the equal-covariance assumption.
+
+The 1D CNN on raw traces achieves a large gain specifically on shots where the qubit relaxes mid-readout (T1 events): 98.4 % recovery vs 44.3 % for LDA, because integrated IQ averages over the flip and lands between the blobs.
 
 ## Assignment fidelity
 
@@ -48,13 +59,15 @@ plt.scatter(X1[:,0], X1[:,1], s=2, label='|1⟩')
 plt.savefig('figures/decision_boundaries.pdf', bbox_inches='tight')
 ```
 
-## FPGA deployment path (planned)
+## FPGA deployment path (outlined in ch. 07, not yet implemented)
 
 1. Train classifier on laptop using `sklearn` / PyTorch.
 2. Quantise weights to fixed-point (16-bit or 8-bit) compatible with ZCU216 DSP48 slices.
 3. For LDA: a single dot-product and threshold → write coefficients into tProcessor data memory.
-4. For MLP: use `hls4ml` to synthesise the network as an HLS IP block (see `SSRO_readout_ML.ipynb` §12).
+4. For MLP/CNN: use `hls4ml` to synthesise the network as an HLS IP block.
 5. Integrate the IP block so the tProcessor receives a binary `b ∈ {0,1}` within one clock cycle.
+
+Real-time deployment was not achieved within the scope of this thesis. Ch. 07 outlines the data collection procedure, model adaptation, and quantisation constraints required to attempt deployment on the ZCU216.
 
 ## Architecture grid search pattern
 

@@ -32,7 +32,7 @@ The tprocv2 notebooks use a different numbering (ch=0, ch=1) that maps to the fi
 DAC 2_231 (JHC3) → HD2-SMA pigtail → BALUN → SMA cable → BALUN → HD2-SMA pigtail → ADC 0_226 (JHC5)
 ```
 
-Round-trip cable delay: τ ≈ 251 µs (dominates over on-chip delay).
+Round-trip delay τ: attributed to DAC/ADC pipeline latency, **not** loopback cable length. The earlier claim of τ ≈ 251 µs as a "cable delay" was an error corrected in ch. 04; see the phase calibration subsection for the current fitted value.
 
 ## Session startup checklist
 
