@@ -112,4 +112,14 @@ the single-tone DDS approach include:
         a fixed digital filter, not a tunable DDS.
 \end{itemize}
 
-\todo{Describe PFB implementation status and preliminary results, if available.}
+Multiplexed readout via the \QICK{} PFB firmware was not implemented within the
+scope of this work.  The single-tone DDS architecture described in
+Sections~\ref{subsec:decimated_vs_accum} and~\ref{subsec:spectroscopy} was used
+throughout.  A natural next step is to extend the architecture to cover the four
+Dátil resonator frequencies characterised at Qilimanjaro: 6.505, 6.730, 6.978,
+and \SI{7.389}{\giga\hertz}.  These frequencies lie above the \SIrange{5}{6}{\giga\hertz}
+design passband of the XM655 BALUNs, so simultaneous multiplexed readout at all
+four tones would require direct HD-header connections with discrete BALUNs, as
+discussed in Section~\ref{sec:hardware}.  The PFB channel spacing and prototype
+filter bandwidth would also need to be verified against the \SI{184}{\mega\hertz}
+minimum separation between adjacent resonators in this device.
