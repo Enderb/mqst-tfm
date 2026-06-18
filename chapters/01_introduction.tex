@@ -65,10 +65,12 @@ This thesis makes the following contributions:
         spectroscopy workflow suitable for both single-qubit and multiplexed
         measurements.
 
-  \item \textbf{Real-time feedback primitives}: implementation and demonstration
-        of conditional pulse logic on the tProcessor, establishing the active qubit
-        reset and mid-circuit measurement infrastructure needed for dynamic
-        quantum circuits.
+  \item \textbf{Real-time feedback primitives}: demonstration of the
+        \texttt{condj} conditional-branch primitive on the tProcessor in loopback,
+        and design of an active qubit reset sequence combining dispersive readout,
+        thresholding, and a calibrated $\pi$ pulse — establishing the
+        infrastructure needed for mid-circuit measurement once the board is
+        connected to a qubit chip.
 
   \item \textbf{ML-assisted state discrimination}: offline design and evaluation
         of a lightweight ML discrimination pipeline on existing experimental SSRO
