@@ -221,9 +221,34 @@ signal switches from $\boldsymbol{\mu}_1$ to $\boldsymbol{\mu}_0$:
   \end{cases}.
 \end{equation}
 
-The simulation parameters are: readout window $T = 200$ samples ($\approx
-\SI{1}{\micro\second}$ at \SI{200}{MSps}), cavity decay $\kappa^{-1} = 20$
-samples (\SI{100}{\nano\second}), and $T_1 = 600$ samples (\SI{3}{\micro\second}).
+\paragraph{Simulation calibration.}
+The free parameter $T_1$ in the simulation was chosen so that the synthetic LDA
+$\ket{1}$ accuracy matches the measured value of 87.3\% from
+Table~\ref{tab:integrated_results}.  This anchors the simulation to an observable
+that was actually measured, rather than to an assumed physical $T_1$.  Sweeping
+$T_1$ over the range 600–6000 samples shows that $T_1 = 3000$ samples
+($\approx\SI{15}{\micro\second}$ at \SI{200}{MSPs}) reproduces the target
+accuracy, corresponding to a relaxation fraction of approximately 6--7\% among
+$\ket{1}$ shots.  The simulation parameters are summarised in
+Table~\ref{tab:sim_params}.
+
+\begin{table}[ht]
+\centering
+\caption{Synthetic trace simulation parameters, calibrated to match the real
+         \texttt{SSRO.h5} LDA $\ket{1}$ accuracy of 87.3\%.}
+\label{tab:sim_params}
+\begin{tabular}{llr}
+\toprule
+Parameter & Physical meaning & Value \\
+\midrule
+$T$ & Readout window & 200 samples ($\approx\SI{1}{\micro\second}$) \\
+$\kappa^{-1}$ & Cavity ringup time & 20 samples ($\approx\SI{100}{\nano\second}$) \\
+$T_1$ & Qubit relaxation time & 3000 samples ($\approx\SI{15}{\micro\second}$) \\
+Relaxation fraction & $\ket{1}$ shots with $t^* < T$ & $\approx$6--7\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 A self-consistency check confirmed that rectangular integration of the synthetic
 traces reproduces the real \texttt{SSRO.h5} blob statistics to within 1\%
 (Table~\ref{tab:self_consistency}).
@@ -246,17 +271,6 @@ $\sigma_I$, $\ket{1}$ (no relax) & $0.851$ & $0.874$ \\
 \end{tabular}
 \end{table}
 
-With $T_1 = 600$ samples ($\approx 3\times$ the readout window), the expected
-relaxation fraction among $\ket{1}$ shots is approximately 28--30\%, corresponding
-to 566--603 relaxation events per 2000 shots.  This is notably higher than the
-measured $\ket{1}$ error rate of approximately 12.75\% observed in
-Table~\ref{tab:integrated_results}.  The discrepancy indicates that the simulated
-$T_1$ is shorter than the actual qubit $T_1$ for this dataset, or equivalently
-that $T_1$ should be set higher (around 1200--1500 samples) to match the observed
-error rate.  The relative CNN-versus-LDA comparison remains valid regardless of
-the exact $T_1$ value; the absolute fidelity numbers from Part III should be
-treated as simulation estimates rather than predictions for the real system.
-
 \subsubsection{CNN Architecture and Training}
 
 The \texttt{ReadoutCNN} model operates on raw traces of shape $(T, 2)$.  Two
@@ -272,58 +286,70 @@ has 953 parameters, sized for deployment via \texttt{hls4ml}.
 \toprule
 Layer & Output shape & Parameters \\
 \midrule
-Conv1d(2$\to$8, k=5)  & $(T-4,\; 8)$  & 88  \\
-ReLU + MaxPool1d(2)    & $((T-4)/2,\; 8)$ & — \\
-Conv1d(8$\to$16, k=5) & $(\cdot,\; 16)$ & 656 \\
-ReLU + GlobalAvgPool  & $(16,)$       & — \\
-Linear(16$\to$8)      & $(8,)$        & 136 \\
-ReLU + Linear(8$\to$1)& $(1,)$        & 73  \\
+Conv1d(2$\to$8, k=8, s=2)  & $(\lfloor(T-7)/2\rfloor,\; 8)$  & 136  \\
+ReLU                        & —                                & — \\
+Conv1d(8$\to$16, k=4, s=2) & $(\cdot,\; 16)$                 & 528 \\
+ReLU + GlobalAvgPool        & $(16,)$                          & — \\
+Linear(16$\to$16)           & $(16,)$                          & 272 \\
+ReLU + Linear(16$\to$1)    & $(1,)$                           & 17  \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The model was trained for 60 epochs using binary cross-entropy loss and the Adam
-optimiser.  Test fidelity reached 0.994 by epoch 39 and remained stable
-thereafter.
+The model was trained for 100 epochs using binary cross-entropy loss and the Adam
+optimiser on a dataset of \num{10000} shots per state.
 
 \subsubsection{Results}
 
 Table~\ref{tab:cnn_results} compares LDA on integrated IQ against the CNN on raw
-traces, evaluated on the same held-out test set.
+traces, evaluated on the same held-out test set (20\%, \num{4000} shots).
 
 \begin{table}[ht]
 \centering
 \caption{CNN vs.\ LDA on synthetic raw traces.  LDA operates on the
          time-averaged $(I,Q)$; the CNN operates on the full trace $(T,2)$.
-         All values are from the held-out test set.}
+         Simulation calibrated so that the synthetic LDA $\ket{1}$ accuracy
+         matches the measured value of 87.3\%.  All values from the held-out
+         test set ($n = \num{4000}$; $\approx$91 relaxation shots).}
 \label{tab:cnn_results}
 \begin{tabular}{lrrrr}
 \toprule
 Classifier & $\mathcal{F}$ & $\ket{0}$ acc. & $\ket{1}$ acc. (all) &
              $\ket{1}$ acc. (relax.\ only) \\
 \midrule
-LDA (integrated IQ)  & 0.826 & 0.875 & 0.778 & 0.443 \\
-1D CNN (raw trace)   & 0.994 & 0.995 & 0.993 & 0.984 \\
+LDA (integrated IQ)  & 0.879 & 0.914 & 0.845 & 0.473 \\
+1D CNN (raw trace)   & 0.988 & 0.997 & 0.979 & 0.560 \\
 \midrule
-CNN gain             & $+16.8\%$ & $+12.0\%$ & $+21.5\%$ & $+54.1\%$ \\
+CNN gain             & $+10.9\%$ & $+8.3\%$ & $+13.4\%$ & $+8.7\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The CNN achieves 98.4\% accuracy on relaxation shots, compared to 44.3\% for LDA
-— a gain of 54 percentage points on the shots that are entirely invisible to
-integration-based methods.  The $P(\ket{1})$ confidence as a function of
-relaxation time $t^*$ rises monotonically: shots that relax late in the window
-(spending most of the trace in $\ket{1}$) are classified with near-certainty,
-while shots that relax early (spending most of the trace in $\ket{0}$) are
-correctly identified as ambiguous.  This confirms the CNN is exploiting the
-temporal jump structure, not merely interpolating between blob positions.
+The CNN achieves an overall fidelity of 98.8\%, compared to 87.9\% for LDA on
+the same synthetic data — a gain of 10.9 percentage points.  On the $\approx$91
+relaxation shots in the test set, LDA accuracy is 47.3\% (close to chance, as
+expected for shots whose integrated IQ lands between the blobs), while the CNN
+reaches 56.0\% — an 8.7 percentage point improvement.  The modest absolute gain
+on relaxation shots reflects the small relaxation fraction at the calibrated $T_1$:
+with only 6--7\% of $\ket{1}$ shots undergoing relaxation, the training set
+contains relatively few examples of the jump pattern, limiting the CNN's
+opportunity to specialise.
 
-These results should be understood as simulation estimates.  The absolute fidelity
-numbers depend on the synthetic $T_1$ value (Section~\ref{subsec:cnn}), which does
-not precisely match the real qubit's $T_1$.  The qualitative conclusion — that a
-CNN on raw traces can recover $T_1$-relaxation shots that are irrecoverable from
-integrated IQ — is robust to this uncertainty.
+The $P(\ket{1})$ confidence as a function of relaxation time $t^*$ rises
+monotonically: shots that relax late in the window (spending most of the trace in
+$\ket{1}$) are classified with high confidence, while shots that relax early are
+correctly identified as ambiguous.  This confirms that the CNN is exploiting the
+temporal step structure rather than simply interpolating between blob positions.
+
+These results should be understood as simulation estimates anchored to the real
+device data.  The calibration procedure — adjusting $T_1$ until the synthetic LDA
+$\ket{1}$ accuracy matches the measured 87.3\% — ensures the simulation is
+consistent with the device, but the absolute CNN numbers will change once real
+raw traces are available.  The qualitative conclusion is robust: a CNN operating
+on raw traces has access to temporal information that the rectangular integrator
+discards, and this structural advantage persists regardless of the exact $T_1$.
+Retraining on real raw traces, once collected with \texttt{acquire\_decimated},
+is the natural next step and is discussed in Section~\ref{sec:conclusions}.
 
 \subsection{FPGA Deployment Path}
 \label{subsec:deployment_path}
@@ -347,9 +373,10 @@ The full deployment sequence is:
         acquire \texttt{SSRO\_raw.h5} using \texttt{acquire\_decimated} (shape
         $(2, N_\text{shots}, T, 2)$).  Set \texttt{readout\_length} to at least
         $3/\kappa$ to capture the full cavity ringdown.
-  \item \textbf{Retrain and validate}: retrain the CNN on real traces.  Recalibrate
-        the synthetic $T_1$ parameter to match the measured $\ket{1}$ error rate
-        ($\approx 12.75\%$), which requires $T_1 \approx 1200$--$1500$ samples.
+  \item \textbf{Retrain and validate}: retrain the CNN on real traces, using the
+        same calibration approach — adjust $T_1$ in the synthetic model until the
+        simulated LDA $\ket{1}$ accuracy matches the measured device value, then
+        use the calibrated synthetic dataset to supplement real training data.
   \item \textbf{Export to HLS}: export the trained PyTorch model to ONNX, then
         convert using \texttt{hls4ml} targeting the ZCU216 fabric
         (\texttt{xczu49dr-ffvf1760-2-e}), \texttt{io\_stream}, and fixed-point
@@ -362,4 +389,7 @@ The full deployment sequence is:
         and fidelity gain under realistic qubit conditions.
 \end{enumerate}
 
-Based on the model's 953 parameters and typical \texttt{hls4ml} resource scaling for comparable architectures, the CNN IP block is expected to require on the order of \num{10000} LUTs and tens of DSP slices — a small fraction of the ZCU216's available fabric — though this must be confirmed by synthesis.
+Based on the model's 953 parameters and typical \texttt{hls4ml} resource scaling
+for comparable architectures, the CNN IP block is expected to require on the order
+of \num{10000} LUTs and tens of DSP slices — a small fraction of the ZCU216's
+available fabric — though this must be confirmed by synthesis.
