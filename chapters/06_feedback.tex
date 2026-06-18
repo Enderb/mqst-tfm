@@ -67,14 +67,16 @@ counter, leaving the ADC timeline undisturbed.
 
 A $\pi$ pulse rotates the qubit state by 180° on the Bloch sphere:
 $\ket{0} \to \ket{1}$ and $\ket{1} \to \ket{0}$.  It is a fundamental primitive
-for qubit initialisation (active reset) and single-qubit gates.
+for qubit initialisation (active reset) and single-qubit gates.  Calibrating it
+requires a connected qubit chip; this section describes the procedure that would
+be followed once the ZCU216 is connected to a device.
 
-The $\pi$ pulse amplitude is calibrated with a \emph{Rabi experiment}: the qubit
-drive pulse amplitude is swept from zero, and the readout signal oscillates
-between the $\ket{0}$ and $\ket{1}$ IQ clusters as the qubit is driven through
-successive half-turns on the Bloch sphere.  The first amplitude at which the
-signal crosses from the $\ket{0}$ cluster to the $\ket{1}$ cluster corresponds to
-the $\pi$ pulse.  The Rabi sequence is:
+The $\pi$ pulse amplitude is found via a \emph{Rabi experiment}: the qubit drive
+pulse amplitude is swept from zero, and the readout signal oscillates between the
+$\ket{0}$ and $\ket{1}$ IQ clusters as the qubit is driven through successive
+half-turns on the Bloch sphere.  The first amplitude at which the signal crosses
+from the $\ket{0}$ cluster to the $\ket{1}$ cluster determines the $\pi$ pulse
+amplitude.  The Rabi sequence is:
 \begin{enumerate}
   \item Prepare qubit in $\ket{0}$ (wait $\gg T_1$).
   \item Apply qubit drive pulse at frequency $\omega_{01}$ with variable amplitude
@@ -82,17 +84,23 @@ the $\pi$ pulse.  The Rabi sequence is:
   \item Read out via the resonator.
 \end{enumerate}
 
-Note that the qubit drive tone is at $\omega_{01}$ (the qubit transition
-frequency, typically \SIrange{5}{7}{\giga\hertz} for fluxonium), which is
-distinct from the resonator frequency $\omega_r$ used for readout.  Two separate
-generator channels are therefore required: one for readout, one for qubit control.
+The qubit drive tone is at $\omega_{01}$ (the qubit transition frequency,
+typically \SIrange{5}{7}{\giga\hertz} for fluxonium), which is distinct from the
+resonator frequency $\omega_r$ used for readout.  Two separate generator channels
+are therefore required: one for readout, one for qubit control.  The
+\QICK{} firmware supports this natively — the tProcessor can address both channels
+independently with nanosecond timing precision.
 
 \subsection{Active Qubit Reset}
 \label{subsec:active_reset}
 
-Active reset is the process of rapidly returning the qubit to $\ket{0}$ by
-measuring its state and applying a corrective $\pi$ pulse only if the qubit is
-found in $\ket{1}$:
+Active reset rapidly returns the qubit to $\ket{0}$ by measuring its state and
+applying a corrective $\pi$ pulse only if the qubit is found in $\ket{1}$.  The
+\QICK{} tProcessor-64 has all the primitives required to implement this entirely
+on-FPGA: the conditional branch demonstrated in Section~\ref{subsec:active_reset}
+provides the decision logic, and the two-channel architecture supports
+simultaneous readout and drive.  The following protocol was designed for
+deployment once the board is connected to a qubit chip:
 \begin{enumerate}
   \item \textbf{Dispersive readout}: fire the readout tone and acquire the
         accumulated IQ result.
@@ -106,8 +114,8 @@ found in $\ket{1}$:
         starting the experiment.
 \end{enumerate}
 
-Because the entire decision-to-pulse path runs inside the tProcessor, the latency
-between completing the readout window and firing the corrective pulse is
+Because the entire decision-to-pulse path would run inside the tProcessor, the
+latency between completing the readout window and firing the corrective pulse is
 determined solely by FPGA clock cycles.  For the ZCU216 operating at a
 \SI{384}{\mega\hertz} fabric clock, this latency is of order tens of nanoseconds
 — orders of magnitude faster than a software round-trip.
