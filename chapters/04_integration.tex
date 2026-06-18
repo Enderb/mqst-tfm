@@ -67,15 +67,17 @@ sessions, making it impossible to compare results across power cycles.
 \paragraph{Phase model.}
 A loopback tone from DAC 2\_231 to ADC 0\_226 measures $\phi$ at a given
 frequency.  Because the two oscillators are effectively separated by a fixed time
-delay $\tau$ (the round-trip propagation delay in the loopback cable), the phase
+delay $\tau$ (the total group delay around the loopback path), the phase
 offset scales linearly with frequency:
 \begin{equation}
   \phi(f) = \phi_0 - 360^\circ \cdot \tau \cdot f,
 \label{eq:phase_model}
 \end{equation}
-where $\phi_0$ is a constant offset and $\tau \approx \SI{251}{\micro\second}$
-in the as-assembled loopback (dominated by the cable length, not the on-chip
-delay).
+where $\phi_0$ is a constant offset and $\tau$ is extracted from the fit.
+Note that the fitted $\tau$ reflects the combined pipeline delay of the DAC
+and ADC signal chains — including the digital up- and down-conversion stages
+(DUC/DDC) and internal FIFOs — rather than the physical cable propagation delay,
+which for a bench loopback of 1--2\,m contributes only a few nanoseconds.
 
 \paragraph{Calibration procedure.}
 The phase calibration sweeps a range of frequencies $f_i$ near the target readout
