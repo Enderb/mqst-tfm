@@ -27,9 +27,10 @@ The main contributions are:
 
   \item \textbf{Readout data-path}: The trade-offs between decimated (waveform)
         and accumulated (averaged IQ) readout modes were characterised.  The
-        $1/\sqrt{N_\text{reps}}$ noise scaling of accumulated readout was
-        confirmed, reducing single-shot noise from $\sim$1.9 to $\sim$0.14 ADU at
-        1000 repetitions.  The resonator spectroscopy workflow was established for
+        accumulated mode produces one integrated $(I, Q)$ pair per shot, suitable
+        for SSRO; repeat-averaging across shots improves spectroscopy SNR but
+        destroys single-shot information and cannot be used for state
+        discrimination.  The resonator spectroscopy workflow was established for
         both single-qubit and multiplexed scenarios.
 
   \item \textbf{Real-time feedback primitives}: The tProcessor-64 conditional
