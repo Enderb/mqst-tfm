@@ -15,6 +15,11 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{siunitx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage{multirow}
 
 %% Algorithms & code
 \usepackage{algorithm}
@@ -27,11 +32,13 @@
 \usepackage[english]{babel}
 \usepackage{hyperref}
 \usepackage[babel]{microtype}
+\usepackage{csquotes}
 
-%% Misc layout
+%% Layout
 \usepackage{wrapfig}
-\usepackage{subcaption}
 \usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{fancyhdr}
 
 %% Theorem environments
 \newtheorem{theorem}{Theorem}
@@ -40,23 +47,85 @@
 \newcommand{\QICK}{\textsc{qick}}
 \newcommand{\todo}[1]{{\bfseries\color{red}[TODO: #1]}}
 
+%% Abstract style (replaces quantumarticle's abstract to avoid double \maketitle)
+\title{}
+\renewenvironment{abstract}
+    {\small
+    \begin{center}
+    \bfseries Abstract
+    \end{center}
+    \quotation}
+    {\endquotation}
+
+
 \begin{document}
 
-\title[Master Thesis -- Ender Jose Barillas Rodriguez]{%
-  Toward ML-Based State Discrimination on FPGA 
-  in Open-Source Quantum Control Electronics}
+\pagenumbering{gobble}
+\begin{titlepage}
+\vspace*{-1cm}
 
-\author{Ender Jose Barillas Rodriguez}
-\supervisor{Joel Pérez Díaz}
+\begin{center}
+\includegraphics[height=1cm]{logos/UB.png}\hspace{1em}
+\includegraphics[height=1cm]{logos/Qili.png}\hspace{1em}
+\includegraphics[height=1cm]{logos/MQST.png}
+\end{center}
 
-\address{Departament de Física Quàntica i Astrofísica, Universitat de Barcelona \&
-  Qilimanjaro Quantum Tech, 08001 Barcelona, Spain}
-\ead{ender.barillas@qilimanjaro.tech}
-\date{July 2026}
+\vspace*{2.5cm}
+\begin{center}
 
-\maketitle
+\large\textsc{MSc Quantum Science and Technology}
 
-%% ----------------------------------------------------------------
+\vspace*{1cm}
+\large\textsc{Master Thesis}
+
+\vspace*{1cm}
+
+\line(1,0){400}
+
+\vspace*{0.25cm}
+
+\Huge\bfseries\sffamily Toward ML-Based State Discrimination on FPGA in Open-Source Quantum Control Electronics
+
+\vspace*{0.2cm}
+
+\line(1,0){400}
+
+\vspace*{1.5cm}
+\large
+Author: Ender Jose Barillas Rodriguez
+
+\vspace{0.5cm}
+Supervised by: Joel Pérez Díaz
+
+\end{center}
+
+\vfill
+\parbox[t]{\linewidth}{%
+     NIUB: 23254663         \\
+     Faculty of Physics, University of Barcelona      \\
+     08028, Barcelona \\
+     July 2026
+  }
+
+\end{titlepage}
+
+\newpage
+
+\textcolor{white}{p}
+\vspace{3cm}
+\section*{Acknowledgements}
+\pagenumbering{roman}
+
+I would like to thank the team at Qilimanjaro Quantum Tech for their
+guidance and support throughout this project.  Special thanks to Joel Pérez Díaz
+for supervising this work and to all colleagues who offered
+technical help and stimulating discussions.  This thesis was carried out during
+an internship at Qilimanjaro from February to July 2026.
+\todo{Expand. Thank David A. for reviewing, and Fabio H. and the team for help with the board. Thank classmates. Thank Bruno and the program for letting me take a shot at joining a new field. Thank Arianna for helping me survive in Barcelona. Thank parents as well.}
+
+
+\newpage
+
 \begin{abstract}
 Low-latency and high-fidelity qubit state measurement is essential for
 superconducting quantum computing, particularly for enabling mid-circuit
@@ -86,21 +155,22 @@ dynamic quantum circuits.
 
 \noindent{\it Keywords}: superconducting qubits, readout, FPGA, QICK, RFSoC,
   dispersive measurement, mid-circuit measurement, machine learning
-\bigskip
 
-%% ----------------------------------------------------------------
-\section*{Acknowledgements}
-I would like to thank the team at Qilimanjaro Quantum Tech for their
-guidance and support throughout this project.  Special thanks to Joel Pérez Díaz
-for supervising this work and to all colleagues who offered
-technical help and stimulating discussions.  This thesis was carried out during
-an internship at Qilimanjaro from February to July 2026.
+\newpage
 
-\bigskip
 \tableofcontents
-\clearpage
+
+\newpage
+\pagenumbering{arabic}
+
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\rhead{Ender Jose Barillas Rodriguez}
+\lfoot{MSc Thesis}
+\rfoot{Barcelona, July 2026}
 
 %% ----------------------------------------------------------------
+
 \input{chapters/01_introduction}
 \input{chapters/02_background}
 \input{chapters/03_hardware}
@@ -111,6 +181,8 @@ an internship at Qilimanjaro from February to July 2026.
 \input{chapters/08_conclusions}
 
 %% ----------------------------------------------------------------
+\newpage
+\lhead{Bibliography}
 \bibliographystyle{unsrt}
 \bibliography{references}
 
