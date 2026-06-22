@@ -41,19 +41,22 @@ The main contributions are:
         \SI{100}{\nano\second}.
 
   \item \textbf{ML-assisted discrimination}: A complete offline discrimination
-        pipeline was developed and evaluated on existing experimental SSRO data.
-        On integrated IQ data, LDA achieves an assignment fidelity of 90.6\%
-        ($\ket{0}$: 94.0\%, $\ket{1}$: 87.3\%), and a systematic grid search over
-        20 MLP architectures confirms that no nonlinear classifier improves on
-        this — a consequence of the near-Gaussian, linearly separable IQ blob
-        structure.  The $\ket{1}$ accuracy deficit is identified as the signature
-        of $T_1$ relaxation mid-shot, which integration-based methods cannot
-        recover.  A lightweight 1D CNN (953 parameters) trained on
-        physically-grounded synthetic raw traces achieves 99.4\% overall fidelity
-        and 98.4\% accuracy on relaxation shots, compared to 44.3\% for LDA on
-        the same shots.  FPGA deployment of the CNN was not achieved within the
-        scope of this work; Section~\ref{subsec:deployment_path} outlines the
-        concrete path toward it.
+      pipeline was developed and evaluated on existing experimental SSRO data.
+      On integrated IQ data, LDA achieves an assignment fidelity of 90.6\%
+      ($\ket{0}$: 94.0\%, $\ket{1}$: 87.3\%), and a systematic grid search over
+      20 MLP architectures confirms that no nonlinear classifier improves on
+      this — a consequence of the near-Gaussian, linearly separable IQ blob
+      structure.  The $\ket{1}$ accuracy deficit is identified as the signature
+      of $T_1$ relaxation mid-shot, which integration-based methods cannot
+      recover.  A lightweight 1D CNN (953 parameters) trained on
+      physically-grounded synthetic raw traces achieves 99.9\% overall fidelity
+      and 100\% accuracy on the 91 relaxation shots in the test set, compared
+      to 41.8\% for LDA on the same shots — a gain of 58.2 percentage points.
+      The 100\% figure reflects near-certain classification on the available
+      test shots and should be interpreted in light of the small relaxation
+      sample size.  FPGA deployment of the CNN was not achieved within the
+      scope of this work; Section~\ref{subsec:deployment_path} outlines the
+      concrete path toward it.
 \end{enumerate}
 
 \subsection{Outlook}

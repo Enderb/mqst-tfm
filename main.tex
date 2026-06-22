@@ -62,50 +62,50 @@
 
 \pagenumbering{gobble}
 \begin{titlepage}
-\vspace*{-1cm}
+    \vspace*{-1cm}
 
-\begin{center}
-\includegraphics[height=1cm]{logos/UB.png}\hspace{1em}
-\includegraphics[height=1cm]{logos/Qili.png}\hspace{1em}
-\includegraphics[height=1cm]{logos/MQST.png}
-\end{center}
+    \begin{center}
+        \includegraphics[height=1cm]{logos/UB.png}\hspace{1em}
+        \includegraphics[height=1cm]{logos/Qili.png}\hspace{1em}
+        \includegraphics[height=1cm]{logos/MQST.png}
+    \end{center}
 
-\vspace*{2.5cm}
-\begin{center}
+    \vspace*{2.5cm}
+    \begin{center}
 
-\large\textsc{MSc Quantum Science and Technology}
+        \large\textsc{MSc Quantum Science and Technology}
 
-\vspace*{1cm}
-\large\textsc{Master Thesis}
+        \vspace*{1cm}
+        \large\textsc{Master Thesis}
 
-\vspace*{1cm}
+        \vspace*{1cm}
 
-\line(1,0){400}
+        \line(1,0){400}
 
-\vspace*{0.25cm}
+        \vspace*{0.25cm}
 
-\Huge\bfseries\sffamily Toward ML-Based State Discrimination on FPGA in Open-Source Quantum Control Electronics
+        \Huge\bfseries\sffamily Toward ML-Based State Discrimination on FPGA in Open-Source Quantum Control Electronics
 
-\vspace*{0.2cm}
+        \vspace*{0.2cm}
 
-\line(1,0){400}
+        \line(1,0){400}
 
-\vspace*{1.5cm}
-\large
-Author: Ender Jose Barillas Rodriguez
+        \vspace*{1.5cm}
+        \large
+        Author: Ender Jose Barillas Rodriguez
 
-\vspace{0.5cm}
-Supervised by: Joel Pérez Díaz
+        \vspace{0.5cm}
+        Supervised by: Joel Pérez Díaz
 
-\end{center}
+    \end{center}
 
-\vfill
-\parbox[t]{\linewidth}{%
-     NIUB: 23254663         \\
-     Faculty of Physics, University of Barcelona      \\
-     08028, Barcelona \\
-     July 2026
-  }
+    \vfill
+    \parbox[t]{\linewidth}{%
+        NIUB: 23254663         \\
+        Faculty of Physics, University of Barcelona      \\
+        08028, Barcelona \\
+        July 2026
+    }
 
 \end{titlepage}
 
@@ -127,11 +127,27 @@ an internship at Qilimanjaro from February to July 2026.
 \newpage
 
 \begin{abstract}
-Low-latency and high-fidelity qubit state measurement is essential for superconducting quantum computing, particularly for enabling mid-circuit measurements and real-time feedback. While commercial control hardware increasingly supports on-FPGA state discrimination, these platforms operate on closed firmware that precludes custom signal processing pipelines. Open-source FPGA frameworks offer an alternative path: full programmatic access to the readout chain, enabling researchers to integrate custom algorithms — including machine learning — directly into the measurement workflow.
+    Low-latency and high-fidelity qubit state measurement is essential for superconducting quantum computing, particularly for enabling mid-circuit measurements and real-time feedback. While commercial control hardware increasingly supports on-FPGA state discrimination, these platforms operate on closed firmware that precludes custom signal processing pipelines. Open-source FPGA frameworks offer an alternative path: full programmatic access to the readout chain, enabling researchers to integrate custom algorithms — including machine learning — directly into the measurement workflow.
 
-This thesis documents the setup and characterisation of a \QICK{}-based~\cite{Stefanazzi2022}readout system on a Xilinx ZCU216 RFSoC platform, covering FPGA configuration, remote operation, DDS-based waveform generation, and analogue front-end characterisation. The work establishes a functional signal chain capable of driving and reading out superconducting resonators, and examines the hardware constraints relevant to dispersive qubit readout, including balun response and filter rolloff across the relevant frequency bands.
+    This thesis documents the setup and characterisation of a \QICK{}-based~\cite{Stefanazzi2022}readout system on a Xilinx ZCU216 RFSoC platform, covering FPGA configuration, remote operation, DDS-based waveform generation, and analogue front-end characterisation. The work establishes a functional signal chain capable of driving and reading out superconducting resonators, and examines the hardware constraints relevant to dispersive qubit readout, including balun response and filter rolloff across the relevant frequency bands.
 
-Building on this infrastructure, we design and evaluate a machine-learning-assisted state discrimination pipeline using existing experimental single-shot readout data from a superconducting qubit device. We find that on integrated IQ data, linear discriminant analysis is already near-optimal — no MLP classifier improves upon it — consistent with the Gaussian blob structure of the IQ clouds. The only meaningful ML payoff comes from a lightweight 1D CNN trained on raw ADC traces, which recovers shots corrupted by mid-readout T1 relaxation that integrated methods cannot distinguish. This model is trained and evaluated entirely offline; real-time deployment within the QICK firmware was not achieved within the scope of this work. Instead, the thesis concludes by outlining the path toward such deployment: the data collection procedure required with the ZCU216 platform, the model adaptation and quantization constraints imposed by the programmable logic fabric, and the experimental methodology needed to assess whether deployment yields measurable improvements in classification speed, fidelity, or both.
+    Building on this infrastructure, we design and evaluate a machine-learning-assisted
+    state discrimination pipeline using existing experimental single-shot readout data
+    from a superconducting qubit device.  We find that on integrated IQ data, linear
+    discriminant analysis is already near-optimal --- no MLP classifier improves upon
+    it --- consistent with the Gaussian blob structure of the IQ clouds.  The only
+    meaningful ML payoff comes from a lightweight 1D CNN trained on physically-grounded
+    synthetic raw ADC traces, which recovers shots corrupted by mid-readout $T_1$
+    relaxation that integrated methods cannot distinguish: the CNN achieves 99.9\%
+    overall fidelity and 100\% accuracy on relaxation shots (58.2 percentage points
+    above LDA), noting that the latter figure is based on approximately 91 relaxation
+    events in the test set.  This model is trained and evaluated entirely offline;
+    real-time deployment within the QICK firmware was not achieved within the scope of
+    this work.  Instead, the thesis concludes by outlining the path toward such
+    deployment: the data collection procedure required with the ZCU216 platform, the
+    model adaptation and quantisation constraints imposed by the programmable logic
+    fabric, and the experimental methodology needed to assess whether deployment yields
+    measurable improvements in classification speed, fidelity, or both.
 
 \end{abstract}
 

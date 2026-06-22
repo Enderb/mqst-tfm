@@ -163,12 +163,12 @@ The result is striking: the fidelity landscape is entirely flat.  No architectur
 — across three orders of magnitude in parameter count — improves on LDA.  This is
 not a failure of the models; it is a statement about the data.
 
-For two classes with Gaussian distributions $\mathcal{N}(\boldsymbol{\mu}_0,
-\Sigma_0)$ and $\mathcal{N}(\boldsymbol{\mu}_1, \Sigma_1)$, the Bayes-optimal
-boundary is a quadratic surface.  When $\Sigma_0 \approx \Sigma_1$ — as
-approximately holds here, confirmed by the nearly identical IQ correlations in
-Table~\ref{tab:iq_stats} — it collapses to the linear boundary found by LDA.  An
-MLP can at best approximate this boundary; it cannot exceed the Bayes optimum.
+This result follows directly from the statistical structure of the data
+(Section~\ref{subsec:ml_background}): for two classes with approximately equal
+covariance — confirmed by the nearly identical IQ correlations in
+Table~\ref{tab:iq_stats} — LDA finds the Bayes-optimal linear boundary.  No
+classifier, regardless of expressive power, can exceed this optimum on the same
+input.
 
 \textbf{The implication is fundamental}: further fidelity improvement cannot come
 from a more expressive classifier on the same integrated IQ input.  It must come
@@ -180,20 +180,26 @@ identifies the mechanism directly: $T_1$ relaxation mid-shot.
 
 \subsubsection{Motivation and the T1 Relaxation Problem}
 
-When a $\ket{1}$ qubit relaxes to $\ket{0}$ at some time $t^*$ within the
-readout window, the FPGA integrator averages over both signal levels and produces
-an $(I, Q)$ point that lands between the two blobs.  Any classifier operating on
-this compressed input — LDA, QDA, or MLP — must guess; the information about the
-true prepared state has been discarded by the integration.
+As established in Section~\ref{subsec:ml_background}, any classifier operating
+on integrated IQ is fundamentally limited when $T_1$ relaxation occurs mid-shot:
+the integrator averages over both signal levels and produces a point that falls
+between the two clusters, and the information about the true prepared state has
+been destroyed.  No classifier operating on this compressed input can recover
+these shots, regardless of its expressive power.
 
-The raw ADC time trace, however, encodes $t^*$ directly as a step in the signal.
-A temporal classifier trained on raw traces can in principle recover these shots
-by detecting the jump.  Part III demonstrates this capability using
-physically-grounded synthetic traces, since raw decimated traces from the
-ZCU216/QICK setup are not yet available (acquiring them requires using
+The raw ADC time trace, however, encodes the relaxation time $t^*$ directly as a
+step discontinuity in the IQ trajectory.  A 1D CNN trained on raw traces can
+detect this jump and correctly identify the prepared state even when the
+integrated IQ falls between the two clusters.  Part III demonstrates this
+capability using physically-grounded synthetic traces, since raw decimated traces
+from the ZCU216/QICK setup are not yet available (acquiring them requires using
 \texttt{acquire\_decimated} rather than the standard \texttt{acquire} call, and
 collecting a dedicated \texttt{SSRO\_raw.h5} dataset with the board connected to
-a qubit chip).
+a qubit chip).  The theoretical motivation for using a CNN rather than a deeper
+MLP is discussed in Section~\ref{subsec:ml_background}: convolutional filters are
+well-suited to detecting local temporal structure — in this case the step
+discontinuity caused by mid-readout relaxation — that pointwise classifiers
+cannot exploit.
 
 \subsubsection{Synthetic Trace Model}
 
@@ -302,54 +308,55 @@ optimiser on a dataset of \num{10000} shots per state.
 \subsubsection{Results}
 
 Table~\ref{tab:cnn_results} compares LDA on integrated IQ against the CNN on raw
-traces, evaluated on the same held-out test set (20\%, \num{4000} shots).
+traces, evaluated on the same held-out test set (20\%, 4000 shots).
 
 \begin{table}[ht]
 \centering
 \caption{CNN vs.\ LDA on synthetic raw traces.  LDA operates on the
          time-averaged $(I,Q)$; the CNN operates on the full trace $(T,2)$.
          Simulation calibrated so that the synthetic LDA $\ket{1}$ accuracy
-         matches the measured value of 87.3\%.  All values from the held-out
-         test set ($n = \num{4000}$; $\approx$91 relaxation shots).}
+         matches the measured value of 87.3\%.
+         All values from the held-out test set ($n = 4000$; ${\approx}91$
+         relaxation shots).}
 \label{tab:cnn_results}
 \begin{tabular}{lrrrr}
 \toprule
-Classifier & $\mathcal{F}$ & $\ket{0}$ acc. & $\ket{1}$ acc. (all) &
-             $\ket{1}$ acc. (relax.\ only) \\
+Classifier & $\mathcal{F}$ & $\ket{0}$ acc. & $\ket{1}$ acc.\ (all) &
+             $\ket{1}$ acc.\ (relax.\ only) \\
 \midrule
-LDA (integrated IQ)  & 0.879 & 0.914 & 0.845 & 0.473 \\
-1D CNN (raw trace)   & 0.988 & 0.997 & 0.979 & 0.560 \\
+LDA (integrated IQ)  & 0.878 & 0.914 & 0.843 & 0.418 \\
+1D CNN (raw trace)   & 0.999 & 1.000 & 0.998 & 1.000 \\
 \midrule
-CNN gain             & $+10.9\%$ & $+8.3\%$ & $+13.4\%$ & $+8.7\%$ \\
+CNN gain             & $+12.1\%$ & $+8.6\%$ & $+15.5\%$ & $+58.2\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The CNN achieves an overall fidelity of 98.8\%, compared to 87.9\% for LDA on
-the same synthetic data — a gain of 10.9 percentage points.  On the $\approx$91
-relaxation shots in the test set, LDA accuracy is 47.3\% (close to chance, as
-expected for shots whose integrated IQ lands between the blobs), while the CNN
-reaches 56.0\% — an 8.7 percentage point improvement.  The modest absolute gain
-on relaxation shots reflects the small relaxation fraction at the calibrated $T_1$:
-with only 6--7\% of $\ket{1}$ shots undergoing relaxation, the training set
-contains relatively few examples of the jump pattern, limiting the CNN's
-opportunity to specialise.
-
-The $P(\ket{1})$ confidence as a function of relaxation time $t^*$ rises
-monotonically: shots that relax late in the window (spending most of the trace in
-$\ket{1}$) are classified with high confidence, while shots that relax early are
-correctly identified as ambiguous.  This confirms that the CNN is exploiting the
-temporal step structure rather than simply interpolating between blob positions.
+The CNN achieves perfect accuracy on the 91 relaxation shots in the held-out test
+set, compared to 41.8\% for LDA — a gain of 58.2 percentage points on the shots
+that are entirely invisible to integration-based methods.  This confirms the
+theoretical expectation from Section~\ref{subsec:ml_background}: the CNN is
+exploiting the temporal jump structure of the raw trace, not merely interpolating
+between blob positions.  The $P(\ket{1})$ confidence as a function of relaxation
+time $t^*$ rises monotonically: shots that relax late in the window (spending most
+of the trace in $\ket{1}$) are classified with near-certainty, while shots that
+relax early (spending most of the trace in $\ket{0}$) are correctly identified as
+ambiguous.
 
 These results should be understood as simulation estimates anchored to the real
-device data.  The calibration procedure — adjusting $T_1$ until the synthetic LDA
-$\ket{1}$ accuracy matches the measured 87.3\% — ensures the simulation is
-consistent with the device, but the absolute CNN numbers will change once real
-raw traces are available.  The qualitative conclusion is robust: a CNN operating
-on raw traces has access to temporal information that the rectangular integrator
-discards, and this structural advantage persists regardless of the exact $T_1$.
-Retraining on real raw traces, once collected with \texttt{acquire\_decimated},
-is the natural next step and is discussed in Section~\ref{sec:conclusions}.
+device data.  The calibration procedure --- adjusting $T_1$ until the synthetic
+LDA $\ket{1}$ accuracy matches the measured 87.3\% --- gives $T_1 = 3000$ samples
+(${\approx}\SI{15}{\micro\second}$ at \SI{200}{MSps}), corresponding to a
+relaxation fraction of approximately 5--6\% of $\ket{1}$ shots within the readout
+window (${\approx}91$ relaxation events in a test set of 4000 shots).  The CNN
+accuracy of 100\% on relaxation shots should be interpreted with this sample size
+in mind; it reflects near-certain classification on the available test shots rather
+than a guarantee of perfect generalisation.  The qualitative conclusion is robust:
+a CNN operating on raw traces has access to temporal information that the
+rectangular integrator discards, and this structural advantage persists regardless
+of the exact $T_1$.  Retraining on real raw traces, once collected with
+\texttt{acquire\_decimated}, is the natural next step and is discussed in
+Section~\ref{sec:conclusions}.
 
 \subsection{FPGA Deployment Path}
 \label{subsec:deployment_path}
