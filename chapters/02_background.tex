@@ -10,7 +10,7 @@ junction acts as a nonlinear inductor with energy $E_J\cos\hat{\varphi}$, where
 $\hat{\varphi}$ is the superconducting phase across the junction and $E_J$ is the
 Josephson energy.  Combined with a shunt capacitance $C$ (charging energy
 $E_C = e^2/2C$), the system forms an artificial atom with a discrete, anharmonic
-spectrum that can be addressed at the transition frequency $\omega_{01}$.
+spectrum that can be addressed at the transition frequency $\omega_{01}$. Several qubit designs have been developed that exploit this anharmonicity in different parameter regimes; this thesis is primarily concerned with two: the transmon and the fluxonium.
 
 \paragraph{Transmon.}
 The transmon~\cite{Koch2007} operates deep in the regime $E_J \gg E_C$, making
@@ -20,15 +20,16 @@ $\alpha = \omega_{12} - \omega_{01}$ is of order $-E_C/\hbar$, typically a few
 hundred \si{\mega\hertz}.
 
 \paragraph{Fluxonium.}
-The fluxonium~\cite{Manucharyan2009} replaces the transmon's large capacitor with
-a superinductance $L$ (inductive energy $E_L = (\Phi_0/2\pi)^2/L$, where
-$\Phi_0$ is the flux quantum), threading the loop with an external flux $\Phi_z$.
-The resulting double-well potential can be tuned between a plasmon regime (near
-$\Phi_z = 0$) and a fluxon regime (near $\Phi_z = \Phi_0/2$).  Fluxonium qubits
-offer long coherence times and are of particular interest because their readout
-landscape is richer: at half-integer flux bias the two wells become degenerate and
-the qubit transition frequency passes through zero, enabling so-called
-\emph{Which-Well Readout} (WWR)~\cite{Blais2021}.
+The fluxonium~\cite{Manucharyan2009} replaces the transmon's large capacitor with a
+superinductance $L$ (inductive energy $E_L = (\Phi_0/2\pi)^2/L$, where $\Phi_0$ is
+the flux quantum), threading the loop with an external flux $\Phi_z$.  The resulting
+double-well potential can be tuned between a plasmon regime (near $\Phi_z = 0$) and
+a fluxon regime (near $\Phi_z = \Phi_0/2$).  Fluxonium qubits offer long coherence
+times and are of particular interest because their readout landscape is richer than
+the transmon's: the dispersive shift $\chi$ varies strongly with flux bias, and near
+the half-flux sweet spot the two eigenstates carry opposite persistent currents,
+giving rise to a large state-dependent dispersive shift that can be exploited for
+high-contrast readout~\cite{Manucharyan2009}.
 
 \subsection{Circuit Quantum Electrodynamics}
 
@@ -38,9 +39,9 @@ and as a filter that protects the qubit from radiative decay into the measuremen
 chain.  The full Hamiltonian (setting $\hbar=1$) is
 \begin{equation}
   \hat{H} = \hat{H}_\text{qubit}
-           + \omega_r \hat{a}^\dagger \hat{a}
-           + g\,\hat{n}_q (\hat{a} + \hat{a}^\dagger),
-\label{eq:jaynes_cummings}
+  + \omega_r \hat{a}^\dagger \hat{a}
+  + g\,\hat{n}_q (\hat{a} + \hat{a}^\dagger),
+  \label{eq:jaynes_cummings}
 \end{equation}
 where $\omega_r$ is the resonator frequency, $\hat{a}$ ($\hat{a}^\dagger$) is the
 resonator annihilation (creation) operator, $g$ is the qubit--resonator coupling
@@ -55,15 +56,15 @@ $i \leftrightarrow j$, second-order perturbation theory in $g$ yields a
 qubit-state-dependent shift of the resonator frequency~\cite{Blais2021}:
 \begin{equation}
   \hat{H}_\text{disp} = \left(\omega_r + \sum_i \chi_i \ket{i}\bra{i}\right)
-                         \hat{a}^\dagger \hat{a},
-\quad
+  \hat{a}^\dagger \hat{a},
+  \quad
   \chi_i = \sum_{j \neq i}
-    \frac{|g_{ij}|^2}{\omega_{ij} - \omega_r}
+  \frac{|g_{ij}|^2}{\omega_{ij} - \omega_r}
   - \frac{|g_{ji}|^2}{\omega_{ji} - \omega_r},
-\label{eq:dispersive_shift}
+  \label{eq:dispersive_shift}
 \end{equation}
 where $g_{ij} = \braket{i|g\,\hat{n}_q|j}$ and $\omega_{ij} = \omega_j -
-\omega_i$.  The textbook two-level dispersive shift $\chi = \chi_1 - \chi_0$
+  \omega_i$.  The textbook two-level dispersive shift $\chi = \chi_1 - \chi_0$
 follows from truncating to the computational subspace, but for fluxonium-class
 qubits the straddling regime (where $|g_{12}| \gg |g_{01}|$) makes this
 truncation unsafe; higher levels must be included~\cite{Koch2007}.
@@ -75,14 +76,16 @@ qubit is in $\ket{0}$ and at $\omega_r + \chi_1$ when in $\ket{1}$, resulting
 in an IQ-plane separation that grows with the dimensionless cavity pull
 $2|\chi|/\kappa$, where $\kappa$ is the resonator linewidth~\cite{Blais2004}.
 
-\paragraph{Which-Well Readout.}
-For a double-well fluxonium biased off degeneracy, the eigenstates are
-approximately localised in the left ($\ket{L}$) or right ($\ket{R}$) well and
-carry definite persistent-current sign.  Because the two wells host different
-local spectra, the dispersive shift evaluated on the ground state of each well
-differs, and the half-splitting
-$\chi_\text{WWR} = \tfrac{1}{2}(\chi_R - \chi_L)$
-sets the WWR contrast~\cite{Blais2021}.
+\paragraph{Fluxonium dispersive readout.}
+For a fluxonium qubit, the dispersive shift landscape is richer than for the
+transmon because the qubit spectrum varies strongly with the external flux $\Phi_z$.
+Near the half-flux point $\Phi_z = \Phi_0/2$, the double-well potential becomes
+symmetric and the two lowest eigenstates carry opposite persistent currents.
+The resulting state-dependent coupling to the resonator produces a dispersive shift
+$\chi = \chi_1 - \chi_0$ whose magnitude depends strongly on the flux bias point,
+making the readout contrast highly tunable.  This flux dependence is a key
+motivation for the fluxonium readout optimisation work being pursued in related
+projects within the Qilimanjaro team.
 
 \subsection{Direct Digital Synthesis}
 \label{subsec:dds}
