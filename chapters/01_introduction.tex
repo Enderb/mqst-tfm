@@ -15,12 +15,7 @@ minimal back-action on unmeasured qubits.
 
 Classical error correction requires measurements that are not only high-fidelity
 but also \emph{fast} relative to qubit coherence times, and — crucially for
-quantum error correction — it requires \emph{mid-circuit measurements}: the
-ability to measure ancilla qubits in the middle of a quantum algorithm, use the
-result to apply corrections in real time, and continue the computation.  This
-capability demands a control electronics stack capable of making a state
-discrimination decision on-chip in nanoseconds to microseconds, not the
-milliseconds typical of host-software processing.
+quantum error correction — it requires \emph{mid-circuit measurements}: the ability to measure ancilla qubits repeatedly during a quantum algorithm, use the results to extract error syndromes in real time, and continue the computation on the data qubits.  This capability demands a control electronics stack capable of making a state discrimination decision on-chip in microseconds — the timescale of the readout integration window itself — rather than the milliseconds typical of a software round-trip to a host CPU.
 
 Field-Programmable Gate Arrays (FPGAs) offer a compelling solution.  Their
 deterministic, sub-microsecond timing enables real-time signal processing close
@@ -51,33 +46,33 @@ process time-consuming and error-prone, especially for multi-qubit scenarios.
 This thesis makes the following contributions:
 
 \begin{enumerate}
-  \item \textbf{Full-stack integration} of the \QICK{} framework on a Xilinx
-        ZCU216 RFSoC board with an XM655 analogue front-end module, including
-        remote operation via a persistent Pyro4 server.
+      \item \textbf{Full-stack integration} of the \QICK{} framework on a Xilinx
+            ZCU216 RFSoC board with an XM655 analogue front-end module, including
+            remote operation via a persistent Pyro4 server.
 
-  \item \textbf{Phase-coherent readout calibration}: a systematic procedure for
-        measuring and compensating the random DAC–ADC phase offset that arises at
-        every board power-on, enabling reproducible IQ measurements across
-        sessions.
+      \item \textbf{Phase-coherent readout calibration}: a systematic procedure for
+            measuring and compensating the random DAC–ADC phase offset that arises at
+            every board power-on, enabling reproducible IQ measurements across
+            sessions.
 
-  \item \textbf{Readout data-path design}: a characterisation of the trade-offs
-        between decimated and accumulated readout modes and a complete resonator
-        spectroscopy workflow suitable for both single-qubit and multiplexed
-        measurements.
+      \item \textbf{Readout data-path design}: a characterisation of the trade-offs
+            between decimated and accumulated readout modes and a complete resonator
+            spectroscopy workflow suitable for both single-qubit and multiplexed
+            measurements.
 
-  \item \textbf{Real-time feedback primitives}: demonstration of the
-        \texttt{condj} conditional-branch primitive on the tProcessor in loopback,
-        and design of an active qubit reset sequence combining dispersive readout,
-        thresholding, and a calibrated $\pi$ pulse — establishing the
-        infrastructure needed for mid-circuit measurement once the board is
-        connected to a qubit chip.
+      \item \textbf{Real-time feedback primitives}: demonstration of the
+            \texttt{condj} conditional-branch primitive on the tProcessor in loopback,
+            and design of an active qubit reset sequence combining dispersive readout,
+            thresholding, and a calibrated $\pi$ pulse — establishing the
+            infrastructure needed for mid-circuit measurement once the board is
+            connected to a qubit chip.
 
-  \item \textbf{ML-assisted state discrimination}: offline design and evaluation
-        of a lightweight ML discrimination pipeline on existing experimental SSRO
-        data, establishing that LDA is near-optimal for integrated IQ inputs, and
-        demonstrating via synthetic raw traces that a 1D CNN recovers
-        $T_1$-relaxation shots irrecoverable by integration-based methods.  A
-        concrete path toward FPGA deployment is outlined.
+      \item \textbf{ML-assisted state discrimination}: offline design and evaluation
+            of a lightweight ML discrimination pipeline on existing experimental SSRO
+            data, establishing that LDA is near-optimal for integrated IQ inputs, and
+            demonstrating via synthetic raw traces that a 1D CNN recovers
+            $T_1$-relaxation shots irrecoverable by integration-based methods.  A
+            concrete path toward FPGA deployment is outlined.
 \end{enumerate}
 
 \subsection{Thesis Outline}
