@@ -292,12 +292,12 @@ has 953 parameters, sized for deployment via \texttt{hls4ml}.
 \toprule
 Layer & Output shape & Parameters \\
 \midrule
-Conv1d(2$\to$8, k=8, s=2)  & $(\lfloor(T-7)/2\rfloor,\; 8)$  & 136  \\
-ReLU                        & —                                & — \\
-Conv1d(8$\to$16, k=4, s=2) & $(\cdot,\; 16)$                 & 528 \\
-ReLU + GlobalAvgPool        & $(16,)$                          & — \\
-Linear(16$\to$16)           & $(16,)$                          & 272 \\
-ReLU + Linear(16$\to$1)    & $(1,)$                           & 17  \\
+Conv1d(2$\to$8, k=8, s=2, p=3)  & $(\lfloor T/2 \rfloor,\; 8)$   & 136 \\
+ReLU                              & —                               & —   \\
+Conv1d(8$\to$16, k=4, s=2, p=1) & $(\cdot,\; 16)$                 & 528 \\
+ReLU + GlobalAvgPool             & $(16,)$                         & —   \\
+Linear(16$\to$16)                & $(16,)$                         & 272 \\
+ReLU + Linear(16$\to$1)         & $(1,)$                          & 17  \\
 \bottomrule
 \end{tabular}
 \end{table}
