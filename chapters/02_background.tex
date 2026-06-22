@@ -36,17 +36,21 @@ high-contrast readout~\cite{Manucharyan2009}.
 In the circuit QED (cQED) architecture~\cite{Blais2004}, a qubit is coupled
 dispersively to a microwave resonator.  The resonator acts both as a readout bus
 and as a filter that protects the qubit from radiative decay into the measurement
-chain.  The full Hamiltonian (setting $\hbar=1$) is
+chain.  The qubit--resonator Hamiltonian in the dipole coupling form
+(setting $\hbar=1$) is
 \begin{equation}
   \hat{H} = \hat{H}_\text{qubit}
-  + \omega_r \hat{a}^\dagger \hat{a}
-  + g\,\hat{n}_q (\hat{a} + \hat{a}^\dagger),
-  \label{eq:jaynes_cummings}
+           + \omega_r \hat{a}^\dagger \hat{a}
+           + g\,\hat{n}_q (\hat{a} + \hat{a}^\dagger),
+\label{eq:qubit_resonator}
 \end{equation}
 where $\omega_r$ is the resonator frequency, $\hat{a}$ ($\hat{a}^\dagger$) is the
 resonator annihilation (creation) operator, $g$ is the qubit--resonator coupling
 strength, and $\hat{n}_q$ is the relevant qubit operator (charge for capacitive
-coupling).
+coupling)~\cite{Krantz2019}.  When the qubit--resonator detuning is large compared
+to the coupling ($|g| \ll |\omega_{ij} - \omega_r|$), second-order perturbation
+theory in $g$ yields an effective qubit-state-dependent shift of the resonator
+frequency, derived in Section~\ref{subsec:dispersive} below.
 
 \subsection{Dispersive Readout}
 \label{subsec:dispersive}
@@ -105,6 +109,7 @@ engines on both the DAC (transmit) and ADC (receive) sides, enabling phase-locke
 signal generation and coherent demodulation~\cite{Stefanazzi2022}.
 
 \subsection{State Discrimination}
+\label{subsec:state_discrim}
 
 Following dispersive readout, the measured IQ quadrature amplitudes $(I, Q)$ form
 two clusters in the complex plane — one for $\ket{0}$ and one for $\ket{1}$.
@@ -120,3 +125,58 @@ where $p(1|0)$ is the probability of assigning $\ket{1}$ given that the qubit wa
 prepared in $\ket{0}$, and vice versa.  More sophisticated classifiers — quadratic
 discriminant analysis, neural networks — can improve fidelity when the clusters are
 non-Gaussian or when multi-level leakage is present.
+
+\subsection{Machine Learning for State Discrimination}
+\label{subsec:ml_background}
+
+The state discrimination problem defined in Section~\ref{subsec:state_discrim} is
+a binary classification task: given a measurement outcome $\mathbf{x} \in
+\mathbb{R}^d$, assign it to one of two classes ($\ket{0}$ or $\ket{1}$).  The
+choice of classifier and its optimality depend on the statistical structure of the
+data.
+
+\paragraph{Linear Discriminant Analysis.}
+If the two classes are distributed as multivariate Gaussians with equal covariance,
+$p(\mathbf{x} \mid s) = \mathcal{N}(\boldsymbol{\mu}_s, \boldsymbol{\Sigma})$ for
+$s \in \{0, 1\}$, then the Bayes-optimal decision boundary is the hyperplane
+\begin{equation}
+  (\boldsymbol{\mu}_1 - \boldsymbol{\mu}_0)^\top \boldsymbol{\Sigma}^{-1}
+  \left(\mathbf{x} - \tfrac{1}{2}(\boldsymbol{\mu}_0 + \boldsymbol{\mu}_1)\right)
+  = 0,
+\label{eq:lda_boundary}
+\end{equation}
+which is exactly the decision boundary found by Linear Discriminant Analysis
+(LDA)~\cite{Gambetta2007}.  Because this boundary is already optimal under the
+Gaussian equal-covariance assumption, no more expressive classifier — including
+multilayer perceptrons (MLPs) — can improve on it.  An MLP can at best approximate
+this boundary; it cannot exceed the Bayes optimum.  When the covariances differ
+between classes, Quadratic Discriminant Analysis (QDA) uses class-specific
+covariances $\boldsymbol{\Sigma}_0, \boldsymbol{\Sigma}_1$ and yields a curved
+boundary that is Bayes-optimal under the unequal-covariance Gaussian model.
+
+\paragraph{Limitations of integrated IQ input.}
+Both LDA and QDA operate on a single integrated $(I, Q)$ pair per shot — the
+time-averaged quadrature amplitudes over the readout window.  This compression
+discards all temporal information.  In particular, if the qubit relaxes from
+$\ket{1}$ to $\ket{0}$ at some time $t^*$ within the readout window, the
+integrator averages over both signal levels and produces a point that falls between
+the two clusters.  No classifier operating on the integrated input can recover
+these shots, regardless of its expressive power, because the information about the
+true prepared state has been destroyed by the integration.
+
+\paragraph{Convolutional Neural Networks on raw traces.}
+A one-dimensional convolutional neural network (1D CNN) takes the full raw ADC
+time trace as input, preserving the temporal structure that integration discards.
+A CNN applies a bank of learned filters across the time axis via the convolution
+operation
+\begin{equation}
+  (f * x)[t] = \sum_{\tau=0}^{k-1} f[\tau]\, x[t - \tau],
+\label{eq:conv}
+\end{equation}
+where $f$ is a learned filter of length $k$ and $x$ is the input signal.  By
+stacking convolutional layers, the network can detect local temporal features at
+increasing scales — in the readout context, the step discontinuity in the IQ
+trajectory that occurs when the qubit relaxes mid-shot.  This makes CNNs
+well-suited to recovering $T_1$-relaxation shots that are irrecoverable from
+integrated IQ, at the cost of requiring raw trace data rather than accumulated IQ
+pairs.
