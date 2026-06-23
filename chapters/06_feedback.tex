@@ -5,12 +5,12 @@
 A key motivation for FPGA-based control is the ability to execute
 \emph{real-time} conditional logic: perform a measurement, make a decision, and
 apply a corrective pulse — all on the FPGA, without a round-trip to the host CPU.
-This section describes the tProcessor-64 instruction set, demonstrates the
+This section describes the tProcessor V2 instruction set, demonstrates the
 conditional branching primitive, and outlines the active qubit reset protocol.
 
 \subsection{tProcessor Architecture}
 
-The tProcessor-64 is a soft-processor synthesised in the FPGA fabric.  It
+The tProcessor V2 is a soft-processor synthesised in the FPGA fabric.  It
 executes a custom instruction set tailored to pulse generation and readout
 sequencing.  Key features include:
 \begin{itemize}
@@ -96,7 +96,7 @@ independently with nanosecond timing precision.
 
 Active reset rapidly returns the qubit to $\ket{0}$ by measuring its state and
 applying a corrective $\pi$ pulse only if the qubit is found in $\ket{1}$.  The
-\QICK{} tProcessor-64 has all the primitives required to implement this entirely
+\QICK{} tProcessor V2 has all the primitives required to implement this entirely
 on-FPGA: the conditional branch demonstrated in Section~\ref{subsec:active_reset}
 provides the decision logic, and the two-channel architecture supports
 simultaneous readout and drive.  The following protocol was designed for
