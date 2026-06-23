@@ -97,6 +97,19 @@ consistent with a readout tone that is not perfectly aligned to the I axis.  The
 data were split 80/20 into training and test sets (3200 / 800 shots) using
 stratified sampling.
 
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=0.75\columnwidth]{code/figures/fig1_iq_scatter}
+      \caption{IQ scatter plot of the \texttt{SSRO.h5} dataset (2000 shots per
+            state).  Blue: $\ket{0}$ (qubit off); orange: $\ket{1}$ (qubit on).
+            Filled circles mark the cluster centroids.  The two clouds are
+            well-separated and approximately Gaussian, with the $\ket{1}$ ellipse
+            visibly wider, consistent with the $\approx\!1.7\times$ covariance
+            asymmetry in Table~\ref{tab:iq_stats}.  The diagonal orientation of both
+            ellipses reflects the residual IQ rotation noted in the text.}
+      \label{fig:iq_scatter}
+\end{figure}
+
 \subsection{Part I — Integrated IQ Discrimination}
 \label{subsec:integrated_iq}
 
@@ -118,6 +131,18 @@ assignment fidelity on the held-out test set.
             \bottomrule
       \end{tabular}
 \end{table}
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=0.85\columnwidth]{code/figures/fig2_confusion}
+      \caption{Confusion matrices for LDA and MLP (32$\to$16) on the held-out
+            test set (800 shots).  Both classifiers produce identical assignments:
+            376/400 correct for $\ket{0}$ and 349/400 correct for $\ket{1}$.  QDA
+            produces the same matrix and is omitted.  The asymmetry between
+            off-diagonal entries (24 vs.\ 51) is the signature of $T_1$ relaxation
+            biasing errors toward $\ket{1}\!\to\!\ket{0}$ misclassification.}
+      \label{fig:confusion}
+\end{figure}
 
 All three classifiers achieve identical fidelity.  The QDA result is
 particularly informative: the two IQ clouds do \emph{not} share the same
@@ -170,6 +195,20 @@ evaluated by 5-fold stratified cross-validation.
             \bottomrule
       \end{tabular}
 \end{table}
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=\columnwidth]{code/figures/fig5_grid_search}
+      \caption{Architecture grid search results on integrated IQ data (5-fold
+            CV).  \emph{Left}: assignment fidelity per MLP architecture; the red
+            dashed line is the LDA baseline (89.83\%).  All architectures except the
+            degenerate (4,\,2) configuration lie within CV noise of LDA.  \emph{Right}:
+            fidelity vs.\ parameter count on a log scale.  No trend with model size
+            is visible across three orders of magnitude.  The (4,\,2) outlier at
+            $\approx\!74\%$ reflects under-parameterisation rather than overfitting,
+            and is excluded from Table~\ref{tab:arch_search}.}
+      \label{fig:grid_search}
+\end{figure}
 
 The result is striking: the fidelity landscape is entirely flat.  No architecture
 — across three orders of magnitude in parameter count — improves on LDA.  This is
@@ -240,6 +279,22 @@ signal switches from $\boldsymbol{\mu}_1$ to $\boldsymbol{\mu}_0$:
             \boldsymbol{\mu}_0 & t \geq t^*
       \end{cases}.
 \end{equation}
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=\columnwidth]{code/figures/fig6_synthetic_traces}
+      \caption{Synthetic raw IQ traces from the \texttt{SSRO\_raw\_synthetic.h5}
+            dataset.  Each panel overlays 200 noisy shots (faint) with the noiseless
+            cavity-ringup envelope (dashed).  \emph{Top row}: $\ket{0}$ shots; both
+            quadratures ring up and plateau near zero (the $\ket{0}$ centroid in the
+            rotated frame).  \emph{Bottom row}: $\ket{1}$ shots; the Q channel
+            plateaus at the $\ket{1}$ centroid.  \emph{Right column}: integrated IQ
+            scatter after rectangular averaging; the $\ket{1}$ cloud is broader,
+            consistent with the covariance asymmetry in Table~\ref{tab:iq_stats}.
+            Note that the synthetic traces are generated in an unrotated frame, so
+            the IQ axes differ from Figure~\ref{fig:iq_scatter}.}
+      \label{fig:synthetic_traces}
+\end{figure}
 
 \paragraph{Simulation calibration.}
 The free parameter $T_1$ in the simulation was chosen so that the synthetic LDA
@@ -318,6 +373,18 @@ has 953 parameters, sized for deployment via \texttt{hls4ml}.
 
 The model was trained for 100 epochs using binary cross-entropy loss and the Adam
 optimiser on a dataset of \num{10000} shots per state.
+
+\begin{figure}[ht]
+      \centering
+      \includegraphics[width=0.85\columnwidth]{code/figures/fig8_training_curve}
+      \caption{CNN training curves.  \emph{Left}: binary cross-entropy loss on
+            the training set, converging smoothly within 40 epochs.  \emph{Right}:
+            test-set assignment fidelity vs.\ epoch, reaching $\approx\!99.9\%$ and
+            remaining well above the LDA baseline of 0.878 (dashed).  The absence of
+            overfitting is consistent with the small model size (953 parameters) and
+            large dataset (\num{10000} shots per class).}
+      \label{fig:training_curve}
+\end{figure}
 
 \subsubsection{Results}
 
