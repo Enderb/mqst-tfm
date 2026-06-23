@@ -30,6 +30,7 @@ import Pyro4
 soc = Pyro4.Proxy("PYRONAME:qick.soc")
 soccfg = soc  # lightweight config object
 \end{minted}
+\todo{Consider removing as I never actually used this, but it is possible}
 
 This design preserves the phase calibration state (see
 Section~\ref{subsec:phase_calib}) across reconnects and makes experiment
@@ -93,7 +94,7 @@ The resulting \texttt{res\_phase} value:
   \phi_\text{res} = \phi_0 - 360^\circ \cdot \tau \cdot f_\text{res}
 \end{equation}
 is stored in the experiment configuration dictionary and passed to the readout
-pulse via \texttt{soccfg.deg2reg(phi\_res)}, which converts degrees to the
+pulse via \texttt{soccfg.deg2reg(res\_phase)}, which converts degrees to the
 integer register format expected by the tProcessor.  This calibration must be
 re-run after every board reboot or bitstream reload, but remains valid throughout
 a measurement session.
@@ -110,3 +111,4 @@ A summary of the recommended start-of-session checklist is:
   \item At session end, call \texttt{soc.reset\_gens()} to halt all running
         generators.
 \end{enumerate}
+\todo{Maybe add steps such as SSH, bring up Jupyter, etc.}
