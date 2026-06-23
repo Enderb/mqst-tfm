@@ -40,9 +40,9 @@ chain.  The qubit--resonator Hamiltonian in the dipole-coupling (Rabi) form
 (setting $\hbar=1$) is
 \begin{equation}
   \hat{H} = \hat{H}_\text{qubit}
-  + \omega_r \hat{a}^\dagger \hat{a}
-  + g\,\hat{n}_q (\hat{a} + \hat{a}^\dagger),
-  \label{eq:rabi_cqed}
+           + \omega_r \hat{a}^\dagger \hat{a}
+           + g\,\hat{n}_q (\hat{a} + \hat{a}^\dagger),
+\label{eq:rabi_cqed}
 \end{equation}
 where $\omega_r$ is the resonator frequency, $\hat{a}$ ($\hat{a}^\dagger$) is the
 resonator annihilation (creation) operator, $g$ is the qubit--resonator coupling
@@ -81,7 +81,7 @@ observes a state-dependent phase shift of the transmitted or reflected signal.
 For a single-qubit system, the resonator sits at $\omega_r + \chi_0$ when the
 qubit is in $\ket{0}$ and at $\omega_r + \chi_1$ when in $\ket{1}$, resulting
 in an IQ-plane separation that grows with the dimensionless cavity pull
-$2|\chi|/\kappa$, where $\kappa$ is the resonator linewidth~\cite{Blais2004}.
+$2|\chi|/\kappa$, where $\kappa$ is the resonator linewidth~\cite{Blais2004,Wallraff2004}.
 
 \paragraph{Fluxonium dispersive readout.}
 For a fluxonium qubit, the dispersive shift landscape is richer than for the
@@ -134,7 +134,7 @@ non-Gaussian or when multi-level leakage is present.
 
 The state discrimination problem defined in Section~\ref{subsec:state_discrim} is
 a binary classification task: given a measurement outcome $\mathbf{x} \in
-  \mathbb{R}^d$, assign it to one of two classes ($\ket{0}$ or $\ket{1}$).  The
+\mathbb{R}^d$, assign it to one of two classes ($\ket{0}$ or $\ket{1}$).  The
 choice of classifier and its optimality depend on the statistical structure of the
 data.
 
@@ -146,7 +146,7 @@ $s \in \{0, 1\}$, then the Bayes-optimal decision boundary is the hyperplane
   (\boldsymbol{\mu}_1 - \boldsymbol{\mu}_0)^\top \boldsymbol{\Sigma}^{-1}
   \left(\mathbf{x} - \tfrac{1}{2}(\boldsymbol{\mu}_0 + \boldsymbol{\mu}_1)\right)
   = 0,
-  \label{eq:lda_boundary}
+\label{eq:lda_boundary}
 \end{equation}
 which is exactly the decision boundary found by Linear Discriminant Analysis
 (LDA)~\cite{Gambetta2007}.  Because this boundary is already optimal under the
@@ -174,7 +174,7 @@ A CNN applies a bank of learned filters across the time axis via the convolution
 operation
 \begin{equation}
   (f * x)[t] = \sum_{\tau=0}^{k-1} f[\tau]\, x[t - \tau],
-  \label{eq:conv}
+\label{eq:conv}
 \end{equation}
 where $f$ is a learned filter of length $k$ and $x$ is the input signal.  By
 stacking convolutional layers, the network can detect local temporal features at

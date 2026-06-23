@@ -95,7 +95,7 @@ independently with nanosecond timing precision.
 \label{subsec:active_reset}
 
 Active reset rapidly returns the qubit to $\ket{0}$ by measuring its state and
-applying a corrective $\pi$ pulse only if the qubit is found in $\ket{1}$.  The
+applying a corrective $\pi$ pulse only if the qubit is found in $\ket{1}$~\cite{Reed2010}.  The
 \QICK{} tProcessor V2 has all the primitives required to implement this entirely
 on-FPGA: the conditional branch demonstrated in Section~\ref{subsec:active_reset}
 provides the decision logic, and the two-channel architecture supports
