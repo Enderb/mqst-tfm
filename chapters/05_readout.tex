@@ -36,7 +36,9 @@ Stores the full time-domain I/Q waveform over the readout window (e.g.\ 1000
 samples).  This is essential for setup: it reveals when the readout pulse arrives
 relative to the trigger (\texttt{adc\_trig\_offset}), whether the integration
 window is correctly positioned, and whether the signal shape is as expected.  The
-single-shot noise is $\sim$\SI{1.9}{ADU} RMS.
+per-sample noise on the decimated output is $\sim$\SI{1.9}{ADU} RMS; this is the
+raw sample-level noise floor, distinct from the per-shot integrated IQ noise
+reported for accumulated readout below.
 
 \paragraph{Accumulated readout.}
 The FPGA sums all ADC samples within the readout window into a single $(I, Q)$
