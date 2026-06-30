@@ -2,10 +2,10 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Quantum computing holds the promise of solving classically intractable problems
+Quantum computing is expected to solve some classically intractable problems
 in optimisation, simulation, and cryptography.  Among the leading hardware
-platforms, superconducting qubits stand out for their relatively fast gate times,
-high coherence, and compatibility with existing microwave engineering
+platforms, superconducting qubits are attractive for their relatively fast gate
+times, high coherence, and compatibility with existing microwave engineering
 infrastructure~\cite{Krantz2019}.  A central challenge that must be overcome on
 the road to fault-tolerant operation is \emph{qubit state measurement}: reading
 out the quantum information stored in a qubit quickly, accurately, and with
@@ -13,18 +13,17 @@ minimal back-action on unmeasured qubits.
 
 \subsection{Motivation}
 
-Classical error correction requires measurements that are not only high-fidelity
-but also \emph{fast} relative to qubit coherence times.  Crucially for quantum
-error correction, it also requires \emph{mid-circuit measurements}: the ability to
-measure ancilla qubits repeatedly during a quantum algorithm, use the results to
-extract error syndromes in real time, and continue the computation on the data
-qubits.  This demands a control electronics stack that can make a state
+Quantum error correction requires measurements that are both high-fidelity and
+\emph{fast} relative to qubit coherence times, and it requires
+\emph{mid-circuit measurements}: the ability to measure ancilla qubits repeatedly
+during a quantum algorithm, use the results to extract error syndromes in real
+time, and continue the computation on the data qubits.  This demands a control electronics stack that can make a state
 discrimination decision on-chip in microseconds, the timescale of the readout
 integration window itself, rather than the milliseconds typical of a software
 round-trip to a host CPU.
 
-Field-Programmable Gate Arrays (FPGAs) offer a compelling solution.  Their
-deterministic, sub-microsecond timing enables real-time signal processing close
+Field-Programmable Gate Arrays (FPGAs) are well suited to this.  Their
+deterministic, sub-microsecond timing allows real-time signal processing close
 to the qubit hardware.  Commercial control platforms such as Qblox, Zurich
 Instruments, and Quantum Machines already exploit this, providing on-FPGA state
 discrimination within closed, proprietary firmware stacks.  However, closed
