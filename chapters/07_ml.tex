@@ -276,7 +276,7 @@ The \texttt{ReadoutCNN} model operates on raw traces of shape $(T, 2)$.  Two
 $8\!\to\!16$ with kernel 4, stride 2) compress the time axis, global average pooling
 collapses it, and a two-layer dense head ($16\!\to\!16\!\to\!1$) produces the binary
 logit for $P(\ket{1})$.  The model has 953 parameters, sized for deployment via
-\texttt{hls4ml}~\cite{Fahim2021}.  It was trained for 100 epochs with binary
+\texttt{hls4ml}~\cite{Fahim2021}.  It was trained for 60 epochs with binary
 cross-entropy loss and the Adam optimiser on \num{2000} shots per state, split 80/20
 into training and test sets.  The training loss converges smoothly within about 40
 epochs and the test fidelity plateaus near 99.75\%, with no sign of overfitting,
@@ -317,7 +317,8 @@ jump structure of the raw trace rather than merely interpolating between blob
 positions.  The $P(\ket{1})$ confidence rises monotonically with relaxation time
 $t^*$: shots that relax late in the window (spending most of the trace in
 $\ket{1}$) are classified with near-certainty, while shots that relax early
-(spending most of the trace in $\ket{0}$) are correctly flagged as ambiguous.
+(spending most of the trace in $\ket{0}$) are correctly flagged as ambiguous
+(Appendix~\ref{appendix:figures}, Figure~\ref{fig:cnn_confidence}).
 
 These results are simulation estimates anchored to the real device data.  As noted
 above, the synthetic dataset uses $T_1 = 600$ samples
