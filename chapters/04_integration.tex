@@ -30,7 +30,6 @@ import Pyro4
 soc = Pyro4.Proxy("PYRONAME:qick.soc")
 soccfg = soc  # lightweight config object
 \end{minted}
-\todo{Consider removing as I never actually used this, but it is possible}
 
 This design preserves the phase calibration state (see
 Section~\ref{subsec:phase_calib}) across reconnects and makes experiment
@@ -75,10 +74,10 @@ offset scales linearly with frequency:
 \label{eq:phase_model}
 \end{equation}
 where $\phi_0$ is a constant offset and $\tau$ is extracted from the fit.
-Note that the fitted $\tau$ reflects the combined pipeline delay of the DAC
-and ADC signal chains — including the digital up- and down-conversion stages
-(DUC/DDC) and internal FIFOs — rather than the physical cable propagation delay,
-which for a bench loopback of 1--2\,m contributes only a few nanoseconds.
+The fitted $\tau$ reflects the combined pipeline delay of the DAC and ADC signal
+chains, including the digital up- and down-conversion stages (DUC/DDC) and internal
+FIFOs, rather than the physical cable propagation delay, which for a bench loopback
+of 1--2\,m contributes only a few nanoseconds.
 
 \paragraph{Calibration procedure.}
 The phase calibration sweeps a range of frequencies $f_i$ near the target readout
@@ -111,4 +110,3 @@ A summary of the recommended start-of-session checklist is:
   \item At session end, call \texttt{soc.reset\_gens()} to halt all running
         generators.
 \end{enumerate}
-\todo{Maybe add steps such as SSH, bring up Jupyter, etc.}

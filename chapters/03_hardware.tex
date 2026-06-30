@@ -7,10 +7,10 @@
 The Xilinx Zynq UltraScale+ ZCU216 evaluation board~\cite{ZCU216} is built around an RFSoC
 device that integrates, on a single chip, a quad-core ARM Cortex-A53 processor,
 an FPGA fabric, and 16 RF-DAC and 16 RF-ADC channels with sampling rates up to
-\SI{9.85}{\giga S/s} and \SI{2.5}{\giga S/s}, respectively.  Operating at
-12-bit and 14-bit resolution, the converters can directly synthesise and capture
-signals in the \SIrange{0}{6}{\giga\hertz} range without an external frequency
-up-conversion stage, provided the analogue signal chain is suitably conditioned.
+\SI{9.85}{\giga S/s} and \SI{2.5}{\giga S/s}, respectively.  At 14-bit resolution,
+the converters can directly synthesise and capture signals in the
+\SIrange{0}{6}{\giga\hertz} range without an external frequency up-conversion stage,
+provided the analogue signal chain is suitably conditioned.
 
 The board runs the PYNQ Linux distribution, which exposes the FPGA fabric and the
 converters through Python libraries, making it straightforward to implement and
@@ -30,7 +30,7 @@ specifications relevant to this thesis.
             DAC resolution   & 14 bit                &                   \\
             ADC channels     & 16                    & Differential GSPS \\
             ADC rate         & up to \SI{2.5}{GS/s}  & Per channel       \\
-            ADC resolution   & 12 bit                &                   \\
+            ADC resolution   & 14 bit                &                   \\
             FPGA fabric      & UltraScale+           & 930k LUT          \\
             Processor        & 4$\times$ Cortex-A53  & \SI{1.5}{GHz}     \\
             Operating system & PYNQ Linux            &                   \\
@@ -91,12 +91,10 @@ solution: it provides BALUN (balanced-to-unbalanced) transformers that convert t
 differential DAC outputs and ADC inputs to/from single-ended SMA ports, along with
 optional filtering.
 
-A key constraints introduced by the XM655 in this work:
-\begin{itemize}
-      \item The BALUNs on the XM655 cover the frequency range \SIrange{10}{6000}{\mega\hertz}.
-            Resonator frequencies above \SI{6}{\giga\hertz} require connections
-            directly on the HD header pins using pigtail cables.
-\end{itemize}
+The key constraint introduced by the XM655 in this work is its bandwidth: the
+BALUNs cover \SIrange{10}{6000}{\mega\hertz}, so resonator frequencies above
+\SI{6}{\giga\hertz} require connections directly on the HD header pins using pigtail
+cables.
 
 The loopback path used for calibration experiments consists of:
 DAC port 2\_231 (JHC3) $\to$ HD2-SMA pigtail $\to$ BALUN $\to$ SMA cable

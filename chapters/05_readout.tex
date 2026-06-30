@@ -20,7 +20,7 @@ waveform generated for qubit readout has the form
 where $\text{env}(t)$ is the pulse envelope (constant, Gaussian, DRAG, etc.),
 $f_r$ is programmed directly into the DDS frequency register, and
 $\phi_\text{res}$ is the phase correction from calibration.  The only noise
-sources are digital: quantisation, clock jitter, and DDS phase truncation spurs —
+sources are digital: quantisation, clock jitter, and DDS phase truncation spurs,
 all of which are deterministic and can be mitigated by appropriate filtering and
 sample-rate choice.
 
@@ -42,7 +42,7 @@ reported for accumulated readout below.
 
 \paragraph{Accumulated readout.}
 The FPGA sums all ADC samples within the readout window into a single $(I, Q)$
-pair in hardware — one pair per shot.  This is the standard mode for SSRO: each
+pair in hardware, one pair per shot.  This is the standard mode for SSRO: each
 shot yields one IQ point, and the discrimination classifier operates on that
 point.  The per-shot integrated IQ noise is determined by the within-window
 averaging over $T_\text{win}$ samples, not by the number of repeated shots.
@@ -51,8 +51,8 @@ From the real SSRO data, the per-shot cluster widths are approximately
 separation of \SI{2.53}{ADU} and a projected SNR of 2.46, yielding a single-shot
 fidelity of 0.906~\cite{Walter2017}.
 
-For applications that do \emph{not} require single-shot resolution — such as
-resonator spectroscopy or Rabi calibration — the same shot can be repeated
+For applications that do \emph{not} require single-shot resolution, such as
+resonator spectroscopy or Rabi calibration, the same shot can be repeated
 $N_\text{reps}$ times and the results averaged, reducing the noise on the
 \emph{mean} phasor as $1/\sqrt{N_\text{reps}}$:
 \begin{equation}
@@ -89,19 +89,10 @@ ADC readout frequency at each step.  The per-step overhead is a few milliseconds
 \emph{any} parameter, including the ADC NCO.  This is the correct approach for
 resonator spectroscopy.
 
-In practice:
-\begin{minted}[fontsize=\small,linenos]{python}
-freqs = np.linspace(f_start, f_stop, n_points)
-amps  = []
-for f in freqs:
-    cfg["pulse_freq"] = f
-    prog = AveragerProgram(soccfg, cfg)
-    iq   = prog.acquire(soc, load_pulses=True, progress=False)
-    amps.append(np.abs(iq[0][0][0] + 1j*iq[0][0][1]))
-\end{minted}
-
-The resonator frequency is identified as the dip (reflection) or peak
-(transmission) in the swept amplitude response.
+In practice, a Python loop steps both the generator and readout frequencies
+together, runs an \texttt{AveragerProgram} at each point, and records the magnitude
+$|I + jQ|$ of the accumulated phasor.  The resonator frequency is identified as the
+dip (reflection) or peak (transmission) in the swept amplitude response.
 
 \subsection{Multiplexed Readout}
 \label{subsec:multiplex}
@@ -130,9 +121,9 @@ scope of this work.  The single-tone DDS architecture described in
 Sections~\ref{subsec:decimated_vs_accum} and~\ref{subsec:spectroscopy} was used
 throughout.  A natural next step is to extend the architecture to cover the four
 Dátil resonator frequencies characterised at Qilimanjaro: 6.505, 6.730, 6.978,
-and \SI{7.389}{\giga\hertz}.  These frequencies lie above the \SIrange{5}{6}{\giga\hertz}
-design passband of the XM655 BALUNs, so simultaneous multiplexed readout at all
+and \SI{7.389}{\giga\hertz}.  These frequencies lie above the \SI{6}{\giga\hertz}
+upper edge of the XM655 BALUN passband, so simultaneous multiplexed readout at all
 four tones would require direct HD-header connections with discrete BALUNs, as
 discussed in Section~\ref{sec:hardware}.  The PFB channel spacing and prototype
-filter bandwidth would also need to be verified against the \SI{184}{\mega\hertz}
+filter bandwidth would also need to be verified against the \SI{225}{\mega\hertz}
 minimum separation between adjacent resonators in this device.

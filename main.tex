@@ -116,38 +116,39 @@
 \section*{Acknowledgements}
 \pagenumbering{roman}
 
-I would like to thank the team at Qilimanjaro Quantum Tech for their
-guidance and support throughout this project.  Special thanks to Joel Pérez Díaz
-for supervising this work and to all colleagues who offered
-technical help and stimulating discussions.  This thesis was carried out during
-an internship at Qilimanjaro from February to July 2026.
-\todo{Expand. Thank David A. for reviewing, and Fabio H. and the team for help with the board. Thank classmates. Thank Bruno and the program for letting me take a shot at joining a new field. Thank Arianna for helping me survive in Barcelona. Thank parents as well.}
+I would like to thank the team at Qilimanjaro Quantum Tech for their guidance and
+support throughout this project.  Special thanks to my supervisor, Joel Pérez Díaz,
+for his patience and direction, to David A. for carefully reviewing this manuscript,
+and to Fabio H. and the rest of the team for their help in getting the board up and
+running.  I am also grateful to Bruno and the MQST programme for the chance to take a
+shot at joining a new field, and to my classmates for making the year what it was.
+On a personal note, I thank Arianna for helping me survive in Barcelona, and my
+parents for their constant support.  This thesis was carried out during an internship
+at Qilimanjaro from February to July 2026.
 
 
 \newpage
 
 \begin{abstract}
-    Low-latency and high-fidelity qubit state measurement is essential for superconducting quantum computing, particularly for enabling mid-circuit measurements and real-time feedback. While commercial control hardware increasingly supports on-FPGA state discrimination, these platforms operate on closed firmware that precludes custom signal processing pipelines. Open-source FPGA frameworks offer an alternative path: full programmatic access to the readout chain, enabling researchers to integrate custom algorithms — including machine learning — directly into the measurement workflow.
+    Low-latency and high-fidelity qubit state measurement is essential for superconducting quantum computing, particularly for enabling mid-circuit measurements and real-time feedback. While commercial control hardware increasingly supports on-FPGA state discrimination, these platforms operate on closed firmware that precludes custom signal processing pipelines. Open-source FPGA frameworks offer an alternative path: full programmatic access to the readout chain, letting researchers integrate custom algorithms, including machine learning, directly into the measurement workflow.
 
-    This thesis documents the setup and characterisation of a \QICK{}-based~\cite{Stefanazzi2022}readout system on a Xilinx ZCU216 RFSoC platform, covering FPGA configuration, remote operation, DDS-based waveform generation, and analogue front-end characterisation. The work establishes a functional signal chain capable of driving and reading out superconducting resonators, and examines the hardware constraints relevant to dispersive qubit readout, including balun response and filter rolloff across the relevant frequency bands.
+    This thesis documents the setup and characterisation of a \QICK{}-based~\cite{Stefanazzi2022} readout system on a Xilinx ZCU216 RFSoC platform, covering FPGA configuration, remote operation, DDS-based waveform generation, and analogue front-end characterisation. The work establishes a functional signal chain capable of driving and reading out superconducting resonators, and examines the hardware constraints relevant to dispersive qubit readout, including balun response and filter rolloff across the relevant frequency bands.
 
-    Building on this infrastructure, we design and evaluate a machine-learning-assisted
-    state discrimination pipeline using existing experimental single-shot readout data
-    from a superconducting qubit device.  We find that on integrated IQ data, linear
-    discriminant analysis is already near-optimal --- no MLP classifier improves upon
-    it --- consistent with the Gaussian blob structure of the IQ clouds.  The only
-    meaningful ML payoff comes from a lightweight 1D CNN trained on physically-grounded
-    synthetic raw ADC traces, which recovers shots corrupted by mid-readout $T_1$
-    relaxation that integrated methods cannot distinguish: the CNN achieves 99.9\%
-    overall fidelity and 100\% accuracy on relaxation shots (58.2 percentage points
-    above LDA), noting that the latter figure is based on approximately 91 relaxation
-    events in the test set.  This model is trained and evaluated entirely offline;
-    real-time deployment within the QICK firmware was not achieved within the scope of
-    this work.  Instead, the thesis concludes by outlining the path toward such
-    deployment: the data collection procedure required with the ZCU216 platform, the
-    model adaptation and quantisation constraints imposed by the programmable logic
-    fabric, and the experimental methodology needed to assess whether deployment yields
-    measurable improvements in classification speed, fidelity, or both.
+    Using existing single-shot readout data from a superconducting qubit device, we
+    design and evaluate a machine-learning-assisted state discrimination pipeline.  On
+    integrated IQ data, linear discriminant analysis is already near-optimal: none of
+    the twenty MLP architectures we tested improves on it, as expected from the
+    Gaussian structure of the IQ clouds.  The only meaningful gain comes from a
+    lightweight 1D CNN trained on physically-grounded synthetic raw ADC traces, which
+    recovers shots corrupted by mid-readout $T_1$ relaxation that integrated methods
+    cannot distinguish.  On a synthetic test set the CNN reaches 99.75\% overall
+    fidelity and 98.4\% accuracy on relaxation shots, against 44.3\% for LDA on the
+    same 122 shots.  This model is trained and evaluated entirely offline; real-time
+    deployment within the QICK firmware was not achieved in this work.  The thesis
+    instead closes by outlining the path toward it: the data collection procedure
+    required on the ZCU216, the model adaptation and quantisation constraints imposed
+    by the programmable logic fabric, and the methodology needed to test whether
+    deployment improves classification speed, fidelity, or both.
 
 \end{abstract}
 

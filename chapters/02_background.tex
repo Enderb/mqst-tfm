@@ -22,13 +22,14 @@ hundred \si{\mega\hertz}.
 \paragraph{Fluxonium.}
 The fluxonium~\cite{Manucharyan2009} replaces the transmon's large capacitor with a
 superinductance $L$ (inductive energy $E_L = (\Phi_0/2\pi)^2/L$, where $\Phi_0$ is
-the flux quantum), threading the loop with an external flux $\Phi_z$.  The resulting
-double-well potential can be tuned between a plasmon regime (near $\Phi_z = 0$) and
-a fluxon regime (near $\Phi_z = \Phi_0/2$).  Fluxonium qubits offer long coherence
-times and are of particular interest because their readout landscape is richer than
-the transmon's: the dispersive shift $\chi$ varies strongly with flux bias, and near
-the half-flux sweet spot the two eigenstates carry opposite persistent currents,
-giving rise to a large state-dependent dispersive shift that can be exploited for
+the flux quantum), threading the loop with an external flux $\Phi_z$.  The external
+flux tunes the resulting potential: near $\Phi_z = 0$ the low-lying states are
+plasmon-like, while near $\Phi_z = \Phi_0/2$ a double well forms and the lowest
+states localise in the two wells.  Fluxonium qubits offer long coherence times, and
+their readout landscape is richer than the transmon's because the dispersive shift
+$\chi$ varies strongly with flux bias.  Near the half-flux point the two lowest
+states localise in opposite wells and carry persistent currents of opposite sign,
+giving a large, flux-tunable state-dependent shift that can be exploited for
 high-contrast readout~\cite{Manucharyan2009}.
 
 \subsection{Circuit Quantum Electrodynamics}
@@ -70,10 +71,10 @@ qubit-state-dependent shift of the resonator frequency~\cite{Blais2021}:
 where $g_{ij} = \braket{i|g\,\hat{n}_q|j}$ and $\omega_{ij} = \omega_j -
   \omega_i$.  The textbook two-level dispersive shift $\chi = \chi_1 - \chi_0$
 follows from truncating to the computational subspace, but for fluxonium-class
-qubits the \emph{straddling regime} (where the resonator frequency lies between
-the two lowest qubit transition frequencies, $\omega_{01} < \omega_r < \omega_{12}$)
-makes this truncation unsafe: the dispersive shifts from the $0\!\to\!1$ and
-$1\!\to\!2$ transitions carry opposite signs and partially cancel, so higher levels
+qubits the \emph{straddling regime}, in which the resonator frequency falls
+between the $0\!\to\!1$ and $1\!\to\!2$ transition frequencies, makes this
+truncation unsafe: the dispersive shifts from the $0\!\to\!1$ and $1\!\to\!2$
+transitions then carry opposite signs and partially cancel, so higher levels
 must be included~\cite{Koch2007}.
 
 In practice, one probes the resonator at its bare frequency $\omega_r$ and
@@ -84,15 +85,11 @@ in an IQ-plane separation that grows with the dimensionless cavity pull
 $2|\chi|/\kappa$, where $\kappa$ is the resonator linewidth~\cite{Blais2004,Wallraff2004}.
 
 \paragraph{Fluxonium dispersive readout.}
-For a fluxonium qubit, the dispersive shift landscape is richer than for the
-transmon because the qubit spectrum varies strongly with the external flux $\Phi_z$.
-Near the half-flux point $\Phi_z = \Phi_0/2$, the double-well potential becomes
-symmetric and the two lowest eigenstates carry opposite persistent currents.
-The resulting state-dependent coupling to the resonator produces a dispersive shift
-$\chi = \chi_1 - \chi_0$ whose magnitude depends strongly on the flux bias point,
-making the readout contrast highly tunable.  This flux dependence is a key
-motivation for the fluxonium readout optimisation work being pursued in related
-projects within the Qilimanjaro team.
+Because the fluxonium spectrum varies strongly with the external flux $\Phi_z$, so
+does its dispersive shift $\chi = \chi_1 - \chi_0$: the state-dependent coupling to
+the resonator, and hence the readout contrast, can be tuned through the flux bias.
+This tunability is a key motivation for the fluxonium readout optimisation work being
+pursued in related projects within the Qilimanjaro team.
 
 \subsection{Direct Digital Synthesis}
 \label{subsec:dds}
@@ -115,7 +112,7 @@ signal generation and coherent demodulation~\cite{Stefanazzi2022}.
 \label{subsec:state_discrim}
 
 Following dispersive readout, the measured IQ quadrature amplitudes $(I, Q)$ form
-two clusters in the complex plane — one for $\ket{0}$ and one for $\ket{1}$.
+two clusters in the complex plane, one for $\ket{0}$ and one for $\ket{1}$.
 Single-shot state discrimination assigns each measurement to one of these
 clusters.  The simplest approach is a linear threshold: a hyperplane in the IQ
 plane that minimises the total misclassification probability, which for Gaussian
@@ -125,9 +122,9 @@ the centroids~\cite{Gambetta2007}.  The single-shot readout fidelity is
   \mathcal{F} = 1 - \frac{1}{2}\left(p(1|0) + p(0|1)\right),
 \end{equation}
 where $p(1|0)$ is the probability of assigning $\ket{1}$ given that the qubit was
-prepared in $\ket{0}$, and vice versa.  More sophisticated classifiers — quadratic
-discriminant analysis, neural networks — can improve fidelity when the clusters are
-non-Gaussian or when multi-level leakage is present.
+prepared in $\ket{0}$, and vice versa.  More sophisticated classifiers, such as
+quadratic discriminant analysis or neural networks, can improve fidelity when the
+clusters are non-Gaussian or when multi-level leakage is present.
 
 \subsection{Machine Learning for State Discrimination}
 \label{subsec:ml_background}
@@ -150,15 +147,15 @@ $s \in \{0, 1\}$, then the Bayes-optimal decision boundary is the hyperplane
 \end{equation}
 which is exactly the decision boundary found by Linear Discriminant Analysis
 (LDA)~\cite{Gambetta2007}.  Because this boundary is already optimal under the
-Gaussian equal-covariance assumption, no more expressive classifier — including
-multilayer perceptrons (MLPs) — can improve on it.  An MLP can at best approximate
-this boundary; it cannot exceed the Bayes optimum.  When the covariances differ
+Gaussian equal-covariance assumption, no more expressive classifier, multilayer
+perceptrons (MLPs) included, can improve on it: an MLP can at best approximate
+this boundary, never exceed the Bayes optimum.  When the covariances differ
 between classes, Quadratic Discriminant Analysis (QDA) uses class-specific
 covariances $\boldsymbol{\Sigma}_0, \boldsymbol{\Sigma}_1$ and yields a curved
 boundary that is Bayes-optimal under the unequal-covariance Gaussian model.
 
 \paragraph{Limitations of integrated IQ input.}
-Both LDA and QDA operate on a single integrated $(I, Q)$ pair per shot — the
+Both LDA and QDA operate on a single integrated $(I, Q)$ pair per shot: the
 time-averaged quadrature amplitudes over the readout window.  This compression
 discards all temporal information.  In particular, if the qubit relaxes from
 $\ket{1}$ to $\ket{0}$ at some time $t^*$ within the readout window, the
@@ -178,8 +175,7 @@ operation
 \end{equation}
 where $f$ is a learned filter of length $k$ and $x$ is the input signal.  By
 stacking convolutional layers, the network can detect local temporal features at
-increasing scales — in the readout context, the step discontinuity in the IQ
-trajectory that occurs when the qubit relaxes mid-shot.  This makes CNNs
-well-suited to recovering $T_1$-relaxation shots that are irrecoverable from
-integrated IQ, at the cost of requiring raw trace data rather than accumulated IQ
-pairs.
+increasing scales, such as the step discontinuity in the IQ trajectory that occurs
+when the qubit relaxes mid-shot.  This makes CNNs well-suited to recovering
+$T_1$-relaxation shots that are irrecoverable from integrated IQ, at the cost of
+requiring raw trace data rather than accumulated IQ pairs.

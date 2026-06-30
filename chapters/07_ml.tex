@@ -4,58 +4,38 @@
 
 \subsection{IQ Data and the Discrimination Problem}
 
-Each single-shot readout produces an averaged $(I, Q)$ pair — a point in the
-complex plane.  Repeated preparation and measurement of the qubit in the same
-state produces a cloud (cluster) of such points, whose centroid and spread depend
-on the readout power, resonator parameters, and integration time.  Two such
-clusters, one for $\ket{0}$ and one for $\ket{1}$, must be distinguished
-reliably.
-
-For ideal Gaussian clusters of equal covariance, the optimal linear classifier is
-the perpendicular bisector of the line segment joining the two centroids:
-\begin{equation}
-  d(\mathbf{x}) = (\boldsymbol{\mu}_1 - \boldsymbol{\mu}_0)^\top
-                  \boldsymbol{\Sigma}^{-1}
-                  \left(\mathbf{x} - \tfrac{1}{2}(\boldsymbol{\mu}_0 + \boldsymbol{\mu}_1)\right)
-  \underset{\hat{y}=0}{\overset{\hat{y}=1}{\gtrless}} 0,
-\label{eq:lda}
-\end{equation}
-where $\boldsymbol{\mu}_0, \boldsymbol{\mu}_1 \in \mathbb{R}^2$ are the class
-centroids and $\boldsymbol{\Sigma}$ is the common covariance matrix (Linear
-Discriminant Analysis, LDA~\cite{Gambetta2007}).  When the covariances differ, Quadratic Discriminant
-Analysis (QDA) uses the class-specific covariances and yields a curved decision
-boundary.
-
-In practice, residual state preparation errors, qubit $T_1$ decay during the
-readout pulse, and higher-level leakage ($\ket{2}$, $\ket{3}$) distort the
-clusters from ideal Gaussians.  These effects motivate the use of more expressive
-classifiers.  The assignment fidelity is defined as
+Each single-shot readout produces an averaged $(I, Q)$ pair, a point in the
+complex plane.  Repeating the preparation and measurement builds up two clouds of
+such points, one for $\ket{0}$ and one for $\ket{1}$, whose centroids and spreads
+depend on the readout power, resonator parameters, and integration time.  As set
+out in Section~\ref{subsec:state_discrim}, for ideal Gaussian clusters of equal
+covariance the optimal linear boundary is the perpendicular bisector of the line
+joining the centroids, which is precisely the LDA boundary
+(Eq.~\ref{eq:lda_boundary}); QDA relaxes the equal-covariance assumption and gives
+a curved boundary.  In practice, state-preparation errors, $T_1$ decay during the
+readout pulse, and higher-level leakage ($\ket{2}$, $\ket{3}$) distort the clusters
+from ideal Gaussians and motivate more expressive classifiers.  Throughout, we
+quote the assignment fidelity
 \begin{equation}
   \mathcal{F} = \tfrac{1}{2}\bigl[P(\hat{s}=0\mid s=0) + P(\hat{s}=1\mid s=1)\bigr],
 \label{eq:fidelity}
 \end{equation}
-the average per-class accuracy across both prepared states.
+the average of the two per-class accuracies.
 
 \subsection{Lightweight Classifiers for FPGA Deployment}
 \label{subsec:classifiers}
 
 For eventual on-FPGA deployment, the classifier must be computable using only
-fixed-point arithmetic and a small number of multiply-accumulate operations.
-The key constraints are:
-\begin{itemize}
-  \item \textbf{Latency}: the decision must complete within one tProcessor cycle
-        budget ($\lesssim$\SI{10}{\nano\second}) to avoid extending the readout
-        dead time.
-  \item \textbf{Resource usage}: the classifier must fit in the available DSP
-        slices and block RAM of the FPGA without displacing the readout and
-        tProcessor logic.
-  \item \textbf{Trainability}: the classifier must be trainable on a laptop from
-        a few thousand calibration shots.
-\end{itemize}
+fixed-point arithmetic and a small number of multiply-accumulate operations.  Three
+constraints matter: latency (the decision must complete within one tProcessor cycle
+budget, $\lesssim$\SI{10}{\nano\second}, so as not to extend the readout dead time),
+resource usage (it must fit in the available DSP slices and block RAM without
+displacing the readout and tProcessor logic), and trainability (it must train on a
+laptop from a few thousand calibration shots).
 
 With these constraints in mind, three classifier families are considered.  A
 \textbf{linear threshold} (LDA) reduces to a single dot product and a
-comparison — the minimum possible arithmetic, directly implementable in the
+comparison, the minimum possible arithmetic, directly implementable in the
 tProcessor's \texttt{mathi} instruction.  A \textbf{quadratic threshold} (QDA)
 evaluates a $2\times2$ matrix product (4 multiply-accumulates) and handles
 asymmetric cluster covariances.  A \textbf{small MLP} with inputs $(I, Q)$, one
@@ -74,7 +54,7 @@ The dataset used throughout this chapter is \texttt{SSRO.h5}, collected on a
 superconducting qubit device at Qilimanjaro.  It contains 2000 single-shot IQ
 measurements per prepared state ($\ket{0}$ and $\ket{1}$), accumulated on-FPGA
 by the rectangular integrator in \texttt{axis\_readout\_v2}.  Each shot is a
-single $(I, Q)$ pair — the time-averaged quadrature amplitudes over the readout
+single $(I, Q)$ pair, the time-averaged quadrature amplitudes over the readout
 window.  The class centroids and separations extracted from this dataset are
 summarised in Table~\ref{tab:iq_stats}.
 
@@ -101,7 +81,7 @@ stratified sampling.
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.75\columnwidth]{code/figures/fig1_iq_scatter}
+  \includegraphics[width=0.62\columnwidth]{code/figures/fig1_iq_scatter}
   \caption{IQ scatter plot of the \texttt{SSRO.h5} dataset (2000 shots per
     state).  Blue: $\ket{0}$ (qubit off); orange: $\ket{1}$ (qubit on).
     Filled circles mark the cluster centroids.  The two clouds are
@@ -112,7 +92,7 @@ stratified sampling.
   \label{fig:iq_scatter}
 \end{figure}
 
-\subsection{Part I — Integrated IQ Discrimination}
+\subsection{Part I: Integrated IQ Discrimination}
 \label{subsec:integrated_iq}
 
 LDA, QDA, and a representative MLP (hidden layers 32$\to$16, ReLU) were trained
@@ -134,28 +114,16 @@ MLP (32$\to$16) & 0.906 & 0.940 & 0.873 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.85\columnwidth]{code/figures/fig2_confusion}
-  \caption{Confusion matrices for LDA and MLP (32$\to$16) on the held-out
-    test set (800 shots).  Both classifiers produce identical assignments:
-    376/400 correct for $\ket{0}$ and 349/400 correct for $\ket{1}$.  QDA
-    produces the same matrix and is omitted.  The asymmetry between
-    off-diagonal entries (24 vs.\ 51) is the signature of $T_1$ relaxation
-    biasing errors toward $\ket{1}\!\to\!\ket{0}$ misclassification.}
-  \label{fig:confusion}
-\end{figure}
-
-All three classifiers achieve identical fidelity.  The QDA result is
-particularly informative: the two IQ clouds do \emph{not} share the same
-covariance --- the $\ket{1}$ noise ellipse is approximately 1.7$\times$ wider
-than the $\ket{0}$ ellipse (Table~\ref{tab:iq_stats}) --- so QDA's curved
-boundary is in principle more expressive than the linear LDA boundary.  That QDA
-recovers no additional fidelity is explained by the large cluster separation: the
-Mahalanobis distance between the two centroids is approximately 2.4, placing the
-clusters well into the regime where the optimal boundary is nearly linear
-regardless of covariance asymmetry.  LDA, QDA, and the MLP are all saturating the
-classification capacity of the two-dimensional integrated IQ input.
+All three classifiers achieve identical fidelity.  The QDA result is the
+informative one: the two IQ clouds do \emph{not} share the same covariance (the
+$\ket{1}$ covariance is roughly $1.7\times$ larger than the $\ket{0}$ covariance,
+Table~\ref{tab:iq_stats}), so QDA's curved boundary is in principle more expressive
+than LDA's linear one.  That it recovers no additional fidelity is explained by the
+large cluster separation: the Mahalanobis distance between the centroids is
+approximately 2.4, which places the clusters well into the regime where the optimal
+boundary is nearly linear regardless of covariance asymmetry.  LDA, QDA, and the MLP
+are all saturating the classification capacity of the two-dimensional integrated IQ
+input.
 
 The $\ket{0}$ accuracy (94.0\%) exceeds the $\ket{1}$ accuracy (87.3\%),
 pointing at a systematic source of $\ket{1}$ misclassification.  This asymmetry
@@ -163,7 +131,7 @@ is the first diagnostic signature of $T_1$ relaxation during the readout window,
 which causes some $\ket{1}$ shots to produce an integrated IQ that falls in the
 $\ket{0}$ blob.
 
-\subsection{Part II — Architecture Search}
+\subsection{Part II: Architecture Search}
 \label{subsec:arch_search}
 
 To test whether the LDA–MLP parity in Part I is specific to the (32$\to$16)
@@ -173,7 +141,8 @@ evaluated by 5-fold stratified cross-validation.
 
 \begin{table}[ht]
 \centering
-\caption{Architecture grid search results (5-fold CV fidelity). LDA baseline:
+\caption{Representative architecture grid search results (5-fold CV fidelity);
+         see Figure~\ref{fig:grid_search} for all 20 configurations. LDA baseline:
          $0.898 \pm 0.013$.  No MLP architecture exceeds LDA.}
 \label{tab:arch_search}
 \begin{tabular}{lrrc}
@@ -181,18 +150,10 @@ evaluated by 5-fold stratified cross-validation.
 Architecture & $\mathcal{F}$ (CV) & $\pm$ std & $\Delta$ vs.\ LDA \\
 \midrule
 (4,)         & 0.897 & 0.012 & $-0.001$ \\
-(8,)         & 0.897 & 0.012 & $-0.001$ \\
-(16,)        & 0.898 & 0.012 & $-0.000$ \\
-(32,)        & 0.898 & 0.012 & $-0.000$ \\
 (64,)        & 0.897 & 0.012 & $-0.001$ \\
 (8, 8)       & 0.896 & 0.012 & $-0.002$ \\
-(16, 16)     & 0.897 & 0.012 & $-0.001$ \\
-(32, 32)     & 0.897 & 0.012 & $-0.001$ \\
-(64, 64)     & 0.897 & 0.012 & $-0.001$ \\
-(16, 8)      & 0.897 & 0.012 & $-0.001$ \\
 (32, 16)     & 0.897 & 0.012 & $-0.001$ \\
-(16, 16, 8)  & 0.898 & 0.012 & $-0.000$ \\
-(32, 32, 16) & 0.897 & 0.013 & $-0.001$ \\
+(64, 64)     & 0.897 & 0.012 & $-0.001$ \\
 (64, 64, 32) & 0.897 & 0.012 & $-0.002$ \\
 \bottomrule
 \end{tabular}
@@ -200,7 +161,7 @@ Architecture & $\mathcal{F}$ (CV) & $\pm$ std & $\Delta$ vs.\ LDA \\
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=\columnwidth]{code/figures/fig5_grid_search}
+  \includegraphics[width=0.82\columnwidth]{code/figures/fig5_grid_search}
   \caption{Architecture grid search results on integrated IQ data (5-fold
     CV).  \emph{Left}: assignment fidelity per MLP architecture; the red
     dashed line is the LDA baseline (89.83\%).  All architectures except the
@@ -212,49 +173,38 @@ Architecture & $\mathcal{F}$ (CV) & $\pm$ std & $\Delta$ vs.\ LDA \\
   \label{fig:grid_search}
 \end{figure}
 
-The result is striking: the fidelity landscape is entirely flat.  No architecture
-— across three orders of magnitude in parameter count — improves on LDA.  This is
-not a failure of the models; it is a statement about the data.
+The fidelity landscape is flat: no architecture, across three orders of magnitude
+in parameter count, improves on LDA.  This is not a failure of the models but a
+statement about the data, and it follows directly from Part~I.  The clusters are
+well-separated (Mahalanobis distance $\approx 2.4$), so the optimal boundary is
+nearly linear even given the $\approx\!1.7\times$ covariance asymmetry, as QDA
+matching LDA confirms.  LDA already finds a near-Bayes-optimal boundary, and no
+classifier can improve on it from the same two-dimensional integrated IQ features.
 
-This result follows directly from the analysis in Part~I.  The two clusters are
-well-separated (Mahalanobis distance $\approx 2.4$), placing them in the regime
-where the optimal decision boundary is nearly linear even accounting for the
-$\approx\!1.7\times$ covariance asymmetry between states --- as confirmed by QDA
-matching LDA exactly.  LDA therefore finds a near-Bayes-optimal boundary on this
-input, and no classifier --- regardless of expressive power --- can improve on it
-using the same two-dimensional integrated IQ features.
+Further improvement must therefore come from richer inputs, not a more expressive
+classifier.  The $\ket{1}$ accuracy deficit diagnosed in Part~I points to the
+mechanism: $T_1$ relaxation mid-shot.
 
-\textbf{The implication is fundamental}: further fidelity improvement cannot come
-from a more expressive classifier on the same integrated IQ input.  It must come
-from richer input features.  The $\ket{1}$ accuracy deficit diagnosed in Part I
-identifies the mechanism directly: $T_1$ relaxation mid-shot.
-
-\subsection{Part III — Raw-Trace CNN}
+\subsection{Part III: Raw-Trace CNN}
 \label{subsec:cnn}
 
 \subsubsection{Motivation and the T1 Relaxation Problem}
 
-As established in Section~\ref{subsec:ml_background}, any classifier operating
-on integrated IQ is fundamentally limited when $T_1$ relaxation occurs mid-shot:
-the integrator averages over both signal levels and produces a point that falls
-between the two clusters, and the information about the true prepared state has
-been destroyed.  No classifier operating on this compressed input can recover
-these shots, regardless of its expressive power.
+As established in Section~\ref{subsec:ml_background}, no classifier operating on
+integrated IQ can recover a shot in which $T_1$ relaxation occurs mid-window: the
+integrator averages over both signal levels and the point lands between the two
+clusters, destroying the information about the prepared state.  The raw ADC trace,
+by contrast, encodes the relaxation time $t^*$ directly as a step in the IQ
+trajectory, and a 1D CNN can detect this step and recover the correct label.
+Convolutional filters are suited to exactly this kind of local temporal structure,
+which pointwise classifiers cannot exploit.
 
-The raw ADC time trace, however, encodes the relaxation time $t^*$ directly as a
-step discontinuity in the IQ trajectory.  A 1D CNN trained on raw traces can
-detect this jump and correctly identify the prepared state even when the
-integrated IQ falls between the two clusters.  Part III demonstrates this
-capability using physically-grounded synthetic traces, since raw decimated traces
-from the ZCU216/QICK setup are not yet available (acquiring them requires using
+Part~III demonstrates the capability on physically-grounded synthetic traces, since
+raw decimated traces from the ZCU216 are not yet available: acquiring them requires
 \texttt{acquire\_decimated} rather than the standard \texttt{acquire} call, and
-collecting a dedicated \texttt{SSRO\_raw\_synthetic.h5} dataset --- the simulated
-counterpart used here --- or real hardware traces with the board connected to
-a qubit chip).  The theoretical motivation for using a CNN rather than a deeper
-MLP is discussed in Section~\ref{subsec:ml_background}: convolutional filters are
-well-suited to detecting local temporal structure — in this case the step
-discontinuity caused by mid-readout relaxation — that pointwise classifiers
-cannot exploit.
+either a dedicated \texttt{SSRO\_raw\_synthetic.h5} dataset (the simulated
+counterpart used here) or real hardware traces with the board connected to a qubit
+chip.
 
 \subsubsection{Synthetic Trace Model}
 
@@ -282,37 +232,25 @@ signal switches from $\boldsymbol{\mu}_1$ to $\boldsymbol{\mu}_0$:
   \end{cases}.
 \end{equation}
 
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=\columnwidth]{code/figures/fig6_synthetic_traces}
-  \caption{Synthetic raw IQ traces from the \texttt{SSRO\_raw\_synthetic.h5}
-    dataset.  Each panel overlays 200 noisy shots (faint) with the noiseless
-    cavity-ringup envelope (dashed).  \emph{Top row}: $\ket{0}$ shots; both
-    quadratures ring up and plateau near zero (the $\ket{0}$ centroid in the
-    rotated frame).  \emph{Bottom row}: $\ket{1}$ shots; the Q channel
-    plateaus at the $\ket{1}$ centroid.  \emph{Right column}: integrated IQ
-    scatter after rectangular averaging; the $\ket{1}$ cloud is broader,
-    consistent with the covariance asymmetry in Table~\ref{tab:iq_stats}.
-    Note that the synthetic traces are generated in an unrotated frame, so
-    the IQ axes differ from Figure~\ref{fig:iq_scatter}.}
-  \label{fig:synthetic_traces}
-\end{figure}
 
 \paragraph{Simulation calibration.}
-The free parameter $T_1$ in the simulation was chosen so that the synthetic LDA
-$\ket{1}$ accuracy matches the measured value of 87.3\% from
-Table~\ref{tab:integrated_results}.  This anchors the simulation to an observable
-that was actually measured, rather than to an assumed physical $T_1$.  Sweeping
-$T_1$ over the range 600–6000 samples shows that $T_1 = 3000$ samples
-($\approx\SI{15}{\micro\second}$ at \SI{200}{MSPs}) reproduces the target
-accuracy, corresponding to a relaxation fraction of approximately 6--7\% among
-$\ket{1}$ shots.  The simulation parameters are summarised in
-Table~\ref{tab:sim_params}.
+The generator is anchored to the real data through its blob statistics: rectangular
+integration of the noiseless traces reproduces the measured \texttt{SSRO.h5}
+centroids and widths to within a few percent (the self-consistency check below).
+The relaxation time was set to $T_1 = 600$ samples ($\approx\SI{3.0}{\micro\second}$
+at \SI{200}{MSps}), which gives a relaxation fraction of about 28\% among $\ket{1}$
+shots.  This is deliberately larger than on the real device, where the measured
+$\ket{1}$ accuracy of 87.3\% implies a much smaller relaxation population; the
+synthetic set over-represents mid-readout relaxation as a stress test of the
+recovery the CNN is meant to perform.  Recalibrating $T_1$ to the real $\ket{1}$
+error rate is left to future work (Section~\ref{sec:conclusions}).  The simulation
+parameters are summarised in Table~\ref{tab:sim_params}.
 
 \begin{table}[ht]
 \centering
-\caption{Synthetic trace simulation parameters, calibrated to match the real
-         \texttt{SSRO.h5} LDA $\ket{1}$ accuracy of 87.3\%.}
+\caption{Synthetic trace simulation parameters.  Blob centroids and widths match
+         \texttt{SSRO.h5}; $T_1$ is set to over-represent mid-readout relaxation
+         (see text).}
 \label{tab:sim_params}
 \begin{tabular}{llr}
 \toprule
@@ -320,126 +258,78 @@ Parameter & Physical meaning & Value \\
 \midrule
 $T$ & Readout window & 200 samples ($\approx\SI{1}{\micro\second}$) \\
 $\tau_\text{cav} = \kappa^{-1}$ & Cavity ringup time constant & 20 samples ($\approx\SI{100}{\nano\second}$) \\
-$T_1$ & Qubit relaxation time & 3000 samples ($\approx\SI{15}{\micro\second}$) \\
-Relaxation fraction & $\ket{1}$ shots with $t^* < T$ & $\approx$6--7\% \\
+$T_1$ & Qubit relaxation time & 600 samples ($\approx\SI{3.0}{\micro\second}$) \\
+Relaxation fraction & $\ket{1}$ shots with $t^* < T$ & $\approx$28\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-A self-consistency check confirmed that rectangular integration of the synthetic
-traces reproduces the real \texttt{SSRO.h5} blob statistics to within 1\%
-(Table~\ref{tab:self_consistency}).
-
-\begin{table}[ht]
-\centering
-\caption{Self-consistency check: synthetic integrated IQ vs.\ real \texttt{SSRO.h5}.}
-\label{tab:self_consistency}
-\begin{tabular}{lrr}
-\toprule
-Quantity & Synthetic & Real \\
-\midrule
-$\mu_I$, $\ket{0}$            & $-0.341$ & $-0.324$ \\
-$\mu_Q$, $\ket{0}$            & $+4.521$ & $+4.502$ \\
-$\sigma_I$, $\ket{0}$         & $0.645$  & $0.649$ \\
-$\mu_I$, $\ket{1}$ (no relax) & $-2.098$ & $-2.095$ \\
-$\mu_Q$, $\ket{1}$ (no relax) & $+6.336$ & $+6.313$ \\
-$\sigma_I$, $\ket{1}$ (no relax) & $0.851$ & $0.874$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+As a self-consistency check, rectangular integration of the noiseless synthetic
+traces reproduces the \texttt{SSRO.h5} centroids to better than 1\% (e.g.\ $\mu_Q$
+of $\ket{0}$: $+4.521$ synthetic vs.\ $+4.502$ real) and the cluster widths to a few
+percent (e.g.\ $\sigma_I$ of $\ket{1}$: $0.851$ vs.\ $0.874$).
 
 \subsubsection{CNN Architecture and Training}
 
 The \texttt{ReadoutCNN} model operates on raw traces of shape $(T, 2)$.  Two
-\texttt{Conv1d} layers compress the time axis, global average pooling collapses
-it, and a small dense head produces the binary logit for $P(\ket{1})$.  The model
-has 953 parameters, sized for deployment via \texttt{hls4ml}~\cite{Fahim2021}.
-
-\begin{table}[ht]
-\centering
-\caption{\texttt{ReadoutCNN} architecture summary (953 parameters).}
-\label{tab:cnn_arch}
-\begin{tabular}{llr}
-\toprule
-Layer & Output shape & Parameters \\
-\midrule
-Conv1d(2$\to$8, k=8, s=2, p=3)  & $(\lfloor T/2 \rfloor,\; 8)$   & 136 \\
-ReLU                              & —                               & —   \\
-Conv1d(8$\to$16, k=4, s=2, p=1) & $(\cdot,\; 16)$                 & 528 \\
-ReLU + GlobalAvgPool             & $(16,)$                         & —   \\
-Linear(16$\to$16)                & $(16,)$                         & 272 \\
-ReLU + Linear(16$\to$1)         & $(1,)$                          & 17  \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The model was trained for 100 epochs using binary cross-entropy loss and the Adam
-optimiser on a dataset of \num{10000} shots per state.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.85\columnwidth]{code/figures/fig8_training_curve}
-  \caption{CNN training curves.  \emph{Left}: binary cross-entropy loss on
-    the training set, converging smoothly within 40 epochs.  \emph{Right}:
-    test-set assignment fidelity vs.\ epoch, reaching $\approx\!99.9\%$ and
-    remaining well above the LDA baseline of 0.878 (dashed).  The absence of
-    overfitting is consistent with the small model size (953 parameters) and
-    large dataset (\num{10000} shots per class).}
-  \label{fig:training_curve}
-\end{figure}
+\texttt{Conv1d} layers (channels $2\!\to\!8$ with kernel 8, stride 2, then
+$8\!\to\!16$ with kernel 4, stride 2) compress the time axis, global average pooling
+collapses it, and a two-layer dense head ($16\!\to\!16\!\to\!1$) produces the binary
+logit for $P(\ket{1})$.  The model has 953 parameters, sized for deployment via
+\texttt{hls4ml}~\cite{Fahim2021}.  It was trained for 100 epochs with binary
+cross-entropy loss and the Adam optimiser on \num{2000} shots per state, split 80/20
+into training and test sets.  The training loss converges smoothly within about 40
+epochs and the test fidelity plateaus near 99.75\%, with no sign of overfitting,
+consistent with the small model size.
 
 \subsubsection{Results}
 
 Table~\ref{tab:cnn_results} compares LDA on integrated IQ against the CNN on raw
-traces, evaluated on the same held-out test set (20\%, 4000 shots).
+traces, evaluated on the same held-out test set (20\%, 800 shots).
 
 \begin{table}[ht]
 \centering
 \caption{CNN vs.\ LDA on synthetic raw traces.  LDA operates on the
          time-averaged $(I,Q)$; the CNN operates on the full trace $(T,2)$.
-         Simulation calibrated so that the synthetic LDA $\ket{1}$ accuracy
-         matches the measured value of 87.3\%.
-         All values from the held-out test set ($n = 4000$; ${\approx}91$
-         relaxation shots).}
+         The synthetic set over-represents relaxation relative to the real device
+         (see text), so the LDA fidelity here is lower than the 0.906 of
+         Table~\ref{tab:integrated_results}.  All values from the held-out test
+         set ($n = 800$; 122 relaxation shots).}
 \label{tab:cnn_results}
 \begin{tabular}{lrrrr}
 \toprule
 Classifier & $\mathcal{F}$ & $\ket{0}$ acc. & $\ket{1}$ acc.\ (all) &
              $\ket{1}$ acc.\ (relax.\ only) \\
 \midrule
-LDA (integrated IQ)  & 0.878 & 0.914 & 0.843 & 0.418 \\
-1D CNN (raw trace)   & 0.999 & 1.000 & 0.998 & 1.000 \\
+LDA (integrated IQ)  & 0.826  & 0.875 & 0.778 & 0.443 \\
+1D CNN (raw trace)   & 0.9975 & 1.000 & 0.995 & 0.984 \\
 \midrule
-CNN gain             & $+12.1\%$ & $+8.6\%$ & $+15.5\%$ & $+58.2\%$ \\
+CNN gain             & $+17.1\%$ & $+12.5\%$ & $+21.8\%$ & $+54.1\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The CNN achieves perfect accuracy on the 91 relaxation shots in the held-out test
-set, compared to 41.8\% for LDA — a gain of 58.2 percentage points on the shots
-that are entirely invisible to integration-based methods.  This confirms the
-theoretical expectation from Section~\ref{subsec:ml_background}: the CNN is
-exploiting the temporal jump structure of the raw trace, not merely interpolating
-between blob positions.  The $P(\ket{1})$ confidence as a function of relaxation
-time $t^*$ rises monotonically: shots that relax late in the window (spending most
-of the trace in $\ket{1}$) are classified with near-certainty, while shots that
-relax early (spending most of the trace in $\ket{0}$) are correctly identified as
-ambiguous.
+The CNN classifies the 122 relaxation shots in the held-out test set with 98.4\%
+accuracy, against 44.3\% for LDA, a gain of 54.1 percentage points on the shots
+that are essentially invisible to integration-based methods.  This confirms the
+expectation from Section~\ref{subsec:ml_background}: the CNN exploits the temporal
+jump structure of the raw trace rather than merely interpolating between blob
+positions.  The $P(\ket{1})$ confidence rises monotonically with relaxation time
+$t^*$: shots that relax late in the window (spending most of the trace in
+$\ket{1}$) are classified with near-certainty, while shots that relax early
+(spending most of the trace in $\ket{0}$) are correctly flagged as ambiguous.
 
-These results should be understood as simulation estimates anchored to the real
-device data.  The calibration procedure --- adjusting $T_1$ until the synthetic
-LDA $\ket{1}$ accuracy matches the measured 87.3\% --- gives $T_1 = 3000$ samples
-(${\approx}\SI{15}{\micro\second}$ at \SI{200}{MSps}), corresponding to a
-relaxation fraction of approximately 5--6\% of $\ket{1}$ shots within the readout
-window (${\approx}91$ relaxation events in a test set of 4000 shots).  The CNN
-accuracy of 100\% on relaxation shots should be interpreted with this sample size
-in mind; it reflects near-certain classification on the available test shots rather
-than a guarantee of perfect generalisation.  The qualitative conclusion is robust:
-a CNN operating on raw traces has access to temporal information that the
-rectangular integrator discards, and this structural advantage persists regardless
-of the exact $T_1$.  Retraining on real raw traces, once collected with
-\texttt{acquire\_decimated}, is the natural next step and is discussed in
-Section~\ref{sec:conclusions}.
+These results are simulation estimates anchored to the real device data.  As noted
+above, the synthetic dataset uses $T_1 = 600$ samples
+(${\approx}\SI{3.0}{\micro\second}$ at \SI{200}{MSps}), giving a relaxation fraction
+of about 28\% (122 relaxation events in the test set of 800 shots), well above the
+real device.  This inflates the absolute gap between CNN and LDA, so the headline
+17-point fidelity improvement should not be read as the gain expected on real data.
+What matters is the qualitative conclusion, and it is robust: a CNN operating on raw
+traces has access to temporal information that the rectangular integrator discards,
+and this structural advantage persists regardless of the exact $T_1$.  Retraining on
+real raw traces, once collected with \texttt{acquire\_decimated}, is the natural
+next step (Section~\ref{sec:conclusions}).
 
 \subsection{FPGA Deployment Path}
 \label{subsec:deployment_path}
@@ -448,8 +338,8 @@ FPGA deployment of the trained classifiers was not achieved within the scope of
 this work.  This section outlines the concrete steps required to close the loop
 from the trained models to real-time discrimination inside the QICK firmware.
 
-The current readout pipeline — rectangular integrator followed by the tProcessor
-threshold register — already implements LDA implicitly.  Formalising this as an
+The current readout pipeline (a rectangular integrator followed by the tProcessor
+threshold register) already implements LDA implicitly.  Formalising this as an
 explicit dot-product instruction (\texttt{mathi}) adds no hardware overhead.  The
 CNN requires a separate data path: raw decimated traces from
 \texttt{acquire\_decimated} are fed into an \texttt{hls4ml}-synthesised IP block
@@ -459,29 +349,24 @@ feedback budget (Table~\ref{tab:latency}).
 
 The full deployment sequence is:
 \begin{enumerate}
-  \item \textbf{Collect real raw traces}: connect the ZCU216 to the qubit chip and
-        acquire \texttt{SSRO\_raw.h5} using \texttt{acquire\_decimated} (shape
-        $(2, N_\text{shots}, T, 2)$).  Set \texttt{readout\_length} to at least
-        $3/\kappa$ to capture the full cavity ringdown.  (Note: the file
-        \texttt{SSRO\_raw\_synthetic.h5} used in Part~III is a simulated dataset,
-        not a hardware capture; this step acquires the real counterpart.)
-  \item \textbf{Retrain and validate}: retrain the CNN on real traces, using the
-        same calibration approach — adjust $T_1$ in the synthetic model until the
-        simulated LDA $\ket{1}$ accuracy matches the measured device value, then
-        use the calibrated synthetic dataset to supplement real training data.
-  \item \textbf{Export to HLS}: export the trained PyTorch model to ONNX, then
-        convert using \texttt{hls4ml}~\cite{Fahim2021} targeting the ZCU216 fabric
-        (\texttt{xczu49dr-ffvf1760-2-e}), \texttt{io\_stream}, and fixed-point
-        precision \texttt{ap\_fixed<16,6>}.
-  \item \textbf{Synthesise and integrate}: synthesise the HLS project in Vivado
-        and integrate the resulting IP block into the QICK bitstream alongside the
-        existing readout chain.
+  \item \textbf{Collect real raw traces}: connect the ZCU216 to a qubit chip and
+        acquire \texttt{SSRO\_raw.h5} with \texttt{acquire\_decimated} (shape
+        $(2, N_\text{shots}, T, 2)$), setting \texttt{readout\_length} to at least
+        $3/\kappa$ to capture the full cavity ringdown.
+  \item \textbf{Retrain and validate}: retrain on real traces, calibrating the
+        synthetic $T_1$ to the measured $\ket{1}$ error rate so the synthetic set
+        can supplement the real data.
+  \item \textbf{Export to HLS}: convert the trained model (PyTorch~$\to$~ONNX) with
+        \texttt{hls4ml}~\cite{Fahim2021}, targeting the ZCU216 fabric
+        (\texttt{xczu49dr}), \texttt{io\_stream}, and \texttt{ap\_fixed<16,6>}
+        precision.
+  \item \textbf{Synthesise and integrate}: build the HLS project in Vivado and add
+        the IP block to the QICK bitstream alongside the existing readout chain.
   \item \textbf{Benchmark}: compare LDA-threshold, CNN-IP, and host-side
-        discrimination on the same experimental data to quantify latency reduction
-        and fidelity gain under realistic qubit conditions.
+        discrimination on the same data to quantify the latency and fidelity gains.
 \end{enumerate}
 
 Based on the model's 953 parameters and typical \texttt{hls4ml} resource scaling
 for comparable architectures, the CNN IP block is expected to require on the order
-of \num{10000} LUTs and tens of DSP slices — a small fraction of the ZCU216's
-available fabric — though this must be confirmed by synthesis.
+of \num{10000} LUTs and tens of DSP slices, a small fraction of the ZCU216's
+available fabric, though this must be confirmed by synthesis.

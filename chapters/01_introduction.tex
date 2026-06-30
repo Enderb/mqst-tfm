@@ -14,8 +14,14 @@ minimal back-action on unmeasured qubits.
 \subsection{Motivation}
 
 Classical error correction requires measurements that are not only high-fidelity
-but also \emph{fast} relative to qubit coherence times, and — crucially for
-quantum error correction — it requires \emph{mid-circuit measurements}: the ability to measure ancilla qubits repeatedly during a quantum algorithm, use the results to extract error syndromes in real time, and continue the computation on the data qubits.  This capability demands a control electronics stack capable of making a state discrimination decision on-chip in microseconds — the timescale of the readout integration window itself — rather than the milliseconds typical of a software round-trip to a host CPU.
+but also \emph{fast} relative to qubit coherence times.  Crucially for quantum
+error correction, it also requires \emph{mid-circuit measurements}: the ability to
+measure ancilla qubits repeatedly during a quantum algorithm, use the results to
+extract error syndromes in real time, and continue the computation on the data
+qubits.  This demands a control electronics stack that can make a state
+discrimination decision on-chip in microseconds, the timescale of the readout
+integration window itself, rather than the milliseconds typical of a software
+round-trip to a host CPU.
 
 Field-Programmable Gate Arrays (FPGAs) offer a compelling solution.  Their
 deterministic, sub-microsecond timing enables real-time signal processing close
@@ -23,7 +29,7 @@ to the qubit hardware.  Commercial control platforms such as Qblox, Zurich
 Instruments, and Quantum Machines already exploit this, providing on-FPGA state
 discrimination within closed, proprietary firmware stacks.  However, closed
 firmware precludes custom signal processing pipelines: researchers cannot inject
-bespoke algorithms — including machine-learning classifiers — into the real-time
+bespoke algorithms, machine-learning classifiers among them, into the real-time
 decision path.  The Quantum Instrumentation Control Kit
 (\QICK)~\cite{Stefanazzi2022} addresses this gap as an open-source FPGA firmware
 and software framework that turns Xilinx Radio-Frequency System-on-Chip (RFSoC)
@@ -63,7 +69,7 @@ This thesis makes the following contributions:
       \item \textbf{Real-time feedback primitives}: demonstration of the
             \texttt{condj} conditional-branch primitive on the tProcessor in loopback,
             and design of an active qubit reset sequence combining dispersive readout,
-            thresholding, and a calibrated $\pi$ pulse — establishing the
+            thresholding, and a calibrated $\pi$ pulse.  This establishes the
             infrastructure needed for mid-circuit measurement once the board is
             connected to a qubit chip.
 
