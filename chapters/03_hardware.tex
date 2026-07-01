@@ -12,6 +12,16 @@ the converters can directly synthesise and capture signals in the
 \SIrange{0}{6}{\giga\hertz} range without an external frequency up-conversion stage,
 provided the analogue signal chain is suitably conditioned.
 
+The ZCU216 was chosen for practical reasons rather than as a bespoke control
+instrument.  It is a general-purpose RFSoC evaluation board, commercially available
+and of the kind a laboratory can readily obtain, and it is one of the platforms
+supported by \QICK{}, the open-source control framework at the centre of this work
+(Section~\ref{subsec:qick_stack}).  \QICK{} is also moving from a research tool
+toward a commercially supported standard: in 2026 the US Department of Energy and
+Fermilab finalised an agreement for the control-electronics vendor Qblox to
+commercialise and distribute it~\cite{QbloxQICK2026}.  Other RFSoC boards would
+also run \QICK{}; the ZCU216 is the one that was available for this project.
+
 The board runs the PYNQ Linux distribution, which exposes the FPGA fabric and the
 converters through Python libraries, making it straightforward to implement and
 iterate on firmware/software stacks.  Table~\ref{tab:zcu216} summarises the key
@@ -46,7 +56,11 @@ open-source framework originally developed at Fermilab that turns an RFSoC board
 into a self-contained qubit controller.  It consists of two layers:
 
 \paragraph{Firmware.}
-A set of Vivado IP blocks synthesised and placed onto the FPGA fabric, comprising:
+The digital logic loaded onto the FPGA, built from reusable hardware modules
+(\emph{IP blocks}) using Vivado, AMD/Xilinx's FPGA design software.  Vivado
+compiles a description of the desired logic into a \emph{bitstream}, the
+configuration file that programs the FPGA fabric into the required circuit at
+power-on.  The \QICK{} firmware comprises:
 \begin{itemize}
       \item \textbf{Signal generators}: DDS-based waveform engines that drive the
             DACs with arbitrary envelopes, constant tones, or flat-top pulses.

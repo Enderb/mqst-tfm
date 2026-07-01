@@ -199,16 +199,30 @@ trajectory, and a 1D CNN can detect this step and recover the correct label.
 Convolutional filters are suited to exactly this kind of local temporal structure,
 which pointwise classifiers cannot exploit.
 
-Part~III demonstrates the capability on physically-grounded synthetic traces, since
-raw decimated traces from the ZCU216 are not yet available: acquiring them requires
-\texttt{acquire\_decimated} rather than the standard \texttt{acquire} call, and
-either a dedicated \texttt{SSRO\_raw\_synthetic.h5} dataset (the simulated
-counterpart used here) or real hardware traces with the board connected to a qubit
-chip.
+Demonstrating this directly would require a real dataset of raw ADC traces from a
+qubit device, and no such dataset was available for this thesis.  The qubit
+processor was not accessible in time, so Parts~I and~II used existing single-shot
+IQ data from Qilimanjaro's databases (Section~\ref{subsec:ssro_data}).  That data
+is \emph{integrated} IQ, one $(I,Q)$ pair per shot: the per-sample time traces are
+discarded on the FPGA and never stored, because integrated IQ is the standard
+readout product and raw traces are not routinely collected.  Acquiring raw traces
+is precisely one of the reasons for setting up the ZCU216 (its
+\texttt{acquire\_decimated} mode returns the full time trace); collecting them is
+part of the future work this thesis prepares for.
+
+In the meantime, Part~III works with \emph{synthetic} traces.  Here ``synthetic''
+does not mean invented: each trace is built from the real device's measured IQ
+statistics (the centroids and noise covariances of Table~\ref{tab:iq_stats}) and
+shaped into the time-resolved signal a raw acquisition would produce, including the
+mid-shot relaxation step.  This lets the full discrimination pipeline, from raw
+trace to trained CNN, be developed and validated now, so that it is ready to run on
+real traces the moment a chip is connected.
 
 \subsubsection{Synthetic Trace Model}
 
-Each shot is modelled as a noisy cavity response:
+Each shot is modelled as a noisy cavity response, following the standard
+dispersive-readout signal model in which the intracavity field rings up toward its
+steady-state value with the cavity rate $\kappa$~\cite{Blais2021,Gambetta2007}:
 \begin{equation}
   \begin{pmatrix}i(t) \\ q(t)\end{pmatrix}
   = \frac{e(t)}{\bar{e}}\,\boldsymbol{\mu}_{s(t)} + \boldsymbol{\eta}(t),

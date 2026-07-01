@@ -139,9 +139,9 @@ at Qilimanjaro from February to July 2026.
     integrated IQ data, linear discriminant analysis is already near-optimal: none of
     the twenty MLP architectures we tested improves on it, as expected from the
     Gaussian structure of the IQ clouds.  The only meaningful gain comes from a
-    lightweight 1D CNN trained on physically-grounded synthetic raw ADC traces, which
-    recovers shots corrupted by mid-readout $T_1$ relaxation that integrated methods
-    cannot distinguish.  On a synthetic test set the CNN reaches 99.75\% overall
+    lightweight 1D CNN trained on synthetic raw ADC traces built from the real
+    device's IQ statistics, which recovers shots corrupted by mid-readout $T_1$
+    relaxation that integrated methods cannot distinguish.  On a synthetic test set the CNN reaches 99.75\% overall
     fidelity and 98.4\% accuracy on relaxation shots, against 44.3\% for LDA on the
     same 122 shots.  This model is trained and evaluated entirely offline; real-time
     deployment within the QICK firmware was not achieved in this work.  The thesis
