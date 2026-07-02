@@ -52,25 +52,25 @@ This thesis makes the following contributions:
 
 \begin{enumerate}
       \item \textbf{Full-stack integration} of the \QICK{} framework on a Xilinx
-            ZCU216 RFSoC board with an XM655 analogue front-end module, including
-            remote operation via a persistent Pyro4 server.
+            ZCU216 RFSoC board with an XM655 analogue front-end module, brought up
+            under PYNQ and driven from Jupyter notebooks over SSH.
 
-      \item \textbf{Phase-coherent readout calibration}: a systematic procedure for
-            measuring and compensating the random DAC–ADC phase offset that arises at
-            every board power-on, enabling reproducible IQ measurements across
-            sessions.
+      \item \textbf{Phase-coherent readout calibration}: setting up and validating,
+            on this system and following the \QICK{} examples, the procedure that
+            measures and compensates the random DAC–ADC phase offset arising at every
+            board power-on, giving reproducible IQ measurements across sessions.
 
       \item \textbf{Readout data-path design}: a characterisation of the trade-offs
             between decimated and accumulated readout modes and a complete resonator
             spectroscopy workflow suitable for both single-qubit and multiplexed
             measurements.
 
-      \item \textbf{Real-time feedback primitives}: demonstration of the
-            \texttt{condj} conditional-branch primitive on the tProcessor in loopback,
-            and design of an active qubit reset sequence combining dispersive readout,
-            thresholding, and a calibrated $\pi$ pulse.  This establishes the
-            infrastructure needed for mid-circuit measurement once the board is
-            connected to a qubit chip.
+      \item \textbf{Real-time feedback primitives}: reproducing the \QICK{}
+            \texttt{condj} conditional-branch demo on the tProcessor in loopback, and
+            outlining how these primitives combine into an active qubit reset sequence
+            (dispersive readout, thresholding, and a calibrated $\pi$ pulse).  This
+            maps out the infrastructure needed for mid-circuit measurement once the
+            board is connected to a qubit chip.
 
       \item \textbf{ML-assisted state discrimination}: offline design and evaluation
             of a lightweight ML discrimination pipeline on existing experimental SSRO

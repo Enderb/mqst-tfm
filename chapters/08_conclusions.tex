@@ -11,12 +11,13 @@ The main contributions are:
 
 \begin{enumerate}
   \item \textbf{System integration}: The ZCU216 board, XM655 analogue front-end,
-        and \QICK{} firmware were brought up from scratch, including SSH access,
-        PYNQ configuration, and a persistent Pyro4 remote-operation server that
-        preserves calibration state across notebook sessions.
+        and \QICK{} firmware were set up for use in data collection, including SSH
+        access, PYNQ configuration, and a Jupyter-notebook workflow for running
+        experiments on the board.
 
-  \item \textbf{Phase-coherent readout calibration}: A procedure was developed to
-        measure the random DAC--ADC DDS phase offset at each power-on and fit the
+  \item \textbf{Phase-coherent readout calibration}: Following the \QICK{} examples,
+        the phase-calibration procedure was set up and validated on this system: it
+        measures the random DAC--ADC DDS phase offset at each power-on and fits the
         linear model $\phi(f) = \phi_0 - 360^\circ \tau f$, with the fitted
         \texttt{res\_phase} folded into the standard experiment configuration.
 
@@ -26,11 +27,11 @@ The main contributions are:
         the single-shot information.  A resonator spectroscopy workflow was
         established for single-qubit and multiplexed scenarios.
 
-  \item \textbf{Real-time feedback primitives}: The tProcessor V2 conditional
-        branch (\texttt{condj}) was demonstrated in loopback, and an active-reset
+  \item \textbf{Real-time feedback primitives}: The \QICK{} \texttt{condj}
+        conditional-branch demo was reproduced in loopback, and an active-reset
         sequence (dispersive readout, thresholding, calibrated $\pi$ pulse) was
-        designed with an estimated digital decision-to-fire latency below
-        \SI{100}{\nano\second}.
+        outlined from these primitives, with an estimated digital decision-to-fire
+        latency below \SI{100}{\nano\second}.
 
   \item \textbf{ML-assisted discrimination}: On integrated IQ data, LDA reaches an
         assignment fidelity of 90.6\% ($\ket{0}$: 94.0\%, $\ket{1}$: 87.3\%), and a
@@ -65,5 +66,5 @@ should also be integrated with Qilimanjaro's higher-level programming interfaces
 production-ready stack.  Finally, the fluxonium dispersive-shift landscape is
 two-dimensional in the $(\Phi_z, \Phi_x)$ flux space, and an ML-assisted
 optimisation of the readout circuit parameters (coupling capacitance, resonator
-frequency) to maximise the cavity pull over a large flux region is a complementary
-direction being pursued in a related BSc project within the team.
+frequency) to maximise the cavity pull over a large flux region is a natural
+complementary direction.

@@ -10,20 +10,16 @@ conditional branching primitive, and outlines the active qubit reset protocol.
 
 \subsection{tProcessor Architecture}
 
-The tProcessor V2 is a soft-processor synthesised in the FPGA fabric.  It
-executes a custom instruction set tailored to pulse generation and readout
-sequencing.  Key features include:
-\begin{itemize}
-  \item \textbf{Register file}: 32 general-purpose 64-bit registers per channel
-        page, plus cross-page registers for inter-channel synchronisation.
-  \item \textbf{Pulse triggers}: dedicated instructions that fire DAC signal
-        generators or arm ADC acquisition windows.
-  \item \textbf{Timing instructions}: \texttt{synci} (advance tProcessor time
-        without touching channel timelines), \texttt{sync\_all} (synchronise all
-        channels), \texttt{wait\_all} (stall until all readout windows close).
-  \item \textbf{Conditional branch}: \texttt{condj page, reg\_a, op, reg\_b, label}
-        jumps to \texttt{label} if \texttt{reg\_a op reg\_b} is true.
-\end{itemize}
+The tProcessor V2 is a soft-processor synthesised in the FPGA fabric, with a
+custom instruction set tailored to pulse generation and readout sequencing.  Each
+channel page holds 32 general-purpose 64-bit registers, with cross-page registers
+for inter-channel synchronisation.  Dedicated instructions fire the DAC generators
+or arm the ADC acquisition windows, while timing instructions advance the schedule:
+\texttt{synci} moves the tProcessor clock without touching the channel timelines,
+\texttt{sync\_all} aligns all channels, and \texttt{wait\_all} stalls until the
+readout windows close.  The primitive that matters for feedback is the conditional
+branch \texttt{condj page, reg\_a, op, reg\_b, label}, which jumps to \texttt{label}
+when \texttt{reg\_a op reg\_b} holds.
 
 All branching targets are resolved at \emph{compile time} by the Python
 assembler: Python's sequential execution of \texttt{body()} builds an
@@ -100,8 +96,8 @@ applying a corrective $\pi$ pulse only if the qubit is found in $\ket{1}$~\cite{
 \QICK{} tProcessor V2 has all the primitives required to implement this entirely
 on-FPGA: the conditional branch demonstrated in Section~\ref{subsec:cond_logic}
 provides the decision logic, and the two-channel architecture supports
-simultaneous readout and drive.  The following protocol was designed for
-deployment once the board is connected to a qubit chip:
+simultaneous readout and drive.  The following protocol, assembled from these
+primitives, would be deployed once the board is connected to a qubit chip:
 \begin{enumerate}
   \item \textbf{Dispersive readout}: fire the readout tone and acquire the
         accumulated IQ result.

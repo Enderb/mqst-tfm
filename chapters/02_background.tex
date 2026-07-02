@@ -63,13 +63,14 @@ qubit-state-dependent shift of the resonator frequency~\cite{Blais2021}:
   \hat{H}_\text{disp} = \left(\omega_r + \sum_i \chi_i \ket{i}\bra{i}\right)
   \hat{a}^\dagger \hat{a},
   \quad
-  \chi_i = \sum_{j \neq i}
-  \frac{|g_{ij}|^2}{\omega_{ij} - \omega_r}
-  - \frac{|g_{ji}|^2}{\omega_{ji} - \omega_r},
+  \chi_i = \sum_{j \neq i} |g_{ij}|^2
+  \left(\frac{1}{\omega_{ij} - \omega_r} + \frac{1}{\omega_{ij} + \omega_r}\right),
   \label{eq:dispersive_shift}
 \end{equation}
 where $g_{ij} = \braket{i|g\,\hat{n}_q|j}$ and $\omega_{ij} = \omega_j -
-  \omega_i$.  The textbook two-level dispersive shift $\chi = \chi_1 - \chi_0$
+  \omega_i$.  The two fractions are the co- and counter-rotating contributions of
+  each virtual transition $i \leftrightarrow j$; keeping only the first recovers the
+  usual rotating-wave result.  The textbook two-level dispersive shift $\chi = \chi_1 - \chi_0$
 follows from truncating to the computational subspace, but for fluxonium-class
 qubits the \emph{straddling regime}, in which the resonator frequency falls
 between the $0\!\to\!1$ and $1\!\to\!2$ transition frequencies, makes this
@@ -88,8 +89,8 @@ $2|\chi|/\kappa$, where $\kappa$ is the resonator linewidth~\cite{Blais2004,Wall
 Because the fluxonium spectrum varies strongly with the external flux $\Phi_z$, so
 does its dispersive shift $\chi = \chi_1 - \chi_0$: the state-dependent coupling to
 the resonator, and hence the readout contrast, can be tuned through the flux bias.
-This tunability is a key motivation for the fluxonium readout optimisation work being
-pursued in related projects within the Qilimanjaro team.
+This tunability is a key motivation for fluxonium readout optimisation, a direction
+of interest to the Qilimanjaro team.
 
 \subsection{Direct Digital Synthesis}
 \label{subsec:dds}

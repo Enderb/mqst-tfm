@@ -51,9 +51,8 @@ see Lienhard et al.~\cite{Lienhard2022}.
 \label{subsec:ssro_data}
 
 The dataset used throughout this chapter is \texttt{SSRO.h5}, collected on a
-superconducting qubit device at Qilimanjaro.  It contains 2000 single-shot IQ
-measurements per prepared state ($\ket{0}$ and $\ket{1}$), accumulated on-FPGA
-by the rectangular integrator in \texttt{axis\_readout\_v2}.  Each shot is a
+superconducting qubit device at Qilimanjaro, and retrieved from a database containing data from past experiments.  It contains 2000 single-shot IQ
+measurements per prepared state ($\ket{0}$ and $\ket{1}$).  Each shot is a
 single $(I, Q)$ pair, the time-averaged quadrature amplitudes over the readout
 window.  The class centroids and separations extracted from this dataset are
 summarised in Table~\ref{tab:iq_stats}.
@@ -114,8 +113,12 @@ MLP (32$\to$16) & 0.906 & 0.940 & 0.873 \\
 \end{tabular}
 \end{table}
 
-All three classifiers achieve identical fidelity.  The QDA result is the
-informative one: the two IQ clouds do \emph{not} share the same covariance (the
+All three classifiers achieve identical fidelity, and in fact identical per-class
+accuracies: they assign all 800 test shots the same way.  This is not a
+coincidence but a consequence of the geometry: the three decision boundaries differ
+only in regions of the IQ plane that contain no test shots, so no shot falls between
+them.  The QDA result is the informative one: the two IQ clouds do \emph{not} share
+the same covariance (the
 $\ket{1}$ covariance is roughly $1.7\times$ larger than the $\ket{0}$ covariance,
 Table~\ref{tab:iq_stats}), so QDA's curved boundary is in principle more expressive
 than LDA's linear one.  That it recovers no additional fidelity is explained by the
@@ -167,9 +170,11 @@ Architecture & $\mathcal{F}$ (CV) & $\pm$ std & $\Delta$ vs.\ LDA \\
     dashed line is the LDA baseline (89.83\%).  All architectures except the
     degenerate (4,\,2) configuration lie within CV noise of LDA.  \emph{Right}:
     fidelity vs.\ parameter count on a log scale.  No trend with model size
-    is visible across three orders of magnitude.  The (4,\,2) outlier at
-    $\approx\!74\%$ reflects under-parameterisation rather than overfitting,
-    and is excluded from Table~\ref{tab:arch_search}.}
+    is visible across three orders of magnitude.  The one outlier, the (4,\,2)
+    architecture (a 4-neuron layer feeding a 2-neuron layer), sits at
+    $\approx\!74\%$ with a large cross-validation spread ($\pm 0.20$): the
+    two-neuron bottleneck trains unstably, collapsing on some folds rather than
+    failing for lack of capacity.  It is excluded from Table~\ref{tab:arch_search}.}
   \label{fig:grid_search}
 \end{figure}
 
@@ -290,7 +295,9 @@ The \texttt{ReadoutCNN} model operates on raw traces of shape $(T, 2)$.  Two
 $8\!\to\!16$ with kernel 4, stride 2) compress the time axis, global average pooling
 collapses it, and a two-layer dense head ($16\!\to\!16\!\to\!1$) produces the binary
 logit for $P(\ket{1})$.  The model has 953 parameters, sized for deployment via
-\texttt{hls4ml}~\cite{Fahim2021}.  It was trained for 60 epochs with binary
+\texttt{hls4ml}~\cite{Fahim2021}, an open-source tool that converts trained neural
+networks into FPGA firmware through high-level synthesis.  It was trained for 60
+epochs with binary
 cross-entropy loss and the Adam optimiser on \num{2000} shots per state, split 80/20
 into training and test sets.  The training loss converges smoothly within about 40
 epochs and the test fidelity plateaus near 99.75\%, with no sign of overfitting,
