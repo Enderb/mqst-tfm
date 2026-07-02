@@ -109,9 +109,9 @@ Synthetic T1: `T1_samples = 600` (≈3.0 µs at 200 MSps), window T=200 samples,
 
 **Framing of "synthetic" (supervisor-corrected, do not regress):** the raw traces are synthetic because the QPU was not accessible in time — Parts I/II used real *integrated* IQ from Qilimanjaro's databases, and raw per-sample traces are not routinely stored, so none existed to train the CNN. Collecting them is a motivation for setting up the ZCU216 (`acquire_decimated`). "Synthetic" = built from the real device's IQ statistics (centroids/covariances), not invented. Do NOT frame the missing raw data as an `acquire` vs `acquire_decimated` choice — that was an earlier wrong framing; the real reason is chip unavailability. Eq. 12 (cavity-response trace model) cites `Blais2021,Gambetta2007`.
 
-## Dátil resonator frequencies
+## Resonator frequencies (one of Qilimanjaro's chips)
 
-6.5051 GHz, 6.7304 GHz, 6.9781 GHz, 7.3892 GHz. Minimum adjacent separation = **225 MHz** (6.7304 − 6.5051); this is the number quoted in ch. 05 for PFB channel spacing (corrected from an earlier 184 MHz). All four lie above the XM655 BALUN passband (≤ 6 GHz), so multiplexed readout needs direct HD-header connections with discrete BALUNs.
+6.5051 GHz, 6.7304 GHz, 6.9781 GHz, 7.3892 GHz. Minimum adjacent separation = **225 MHz** (6.7304 − 6.5051); this is the number quoted in ch. 05 for PFB channel spacing (corrected from an earlier 184 MHz). All four lie above the XM655 BALUN passband (≤ 6 GHz), so multiplexed readout needs direct HD-header connections with discrete BALUNs. **The chip name "Dátil" was removed from the thesis text** (supervisor request); refer to it generically as "one of Qilimanjaro's chips". The highest target resonator is **7.389 GHz** (a review note's "7319 MHz" was an error).
 
 ## Key physical constants and calibration values
 
@@ -120,7 +120,7 @@ Synthetic T1: `T1_samples = 600` (≈3.0 µs at 200 MSps), window T=200 samples,
 - Accumulated readout noise: σ ≈ 1.9 ADU / √N_reps
 - tProcessor fabric clock: 384 MHz → 1 cycle ≈ 2.6 ns
 - Active reset digital latency: `condj` + threshold ≈ 10–13 ns total
-- Channel mapping: Generator 6 = DAC 2_231 (JHC3); Readout 0 = ADC 0_226 (JHC5)
+- Channel mapping (from `code/qick/frequency_sweep_tprocv2.ipynb`, the source of truth): **Generator 0** (`axis_signal_gen_v6`) = DAC tile 2 blk 0 (JHC3); **Readout 0** = ADC tile 2 blk 0 (JHC7). Second path: gen 3 (`axis_sg_mux8_v1`) → RO 6 (JHC8). The old "Gen 6 / DAC 2_231 / ADC 0_226 / JHC5" values were wrong and were corrected everywhere (Table 2, ch3 text, ch4 phase-cal, figure caption, and the `system_topology.svg`/`.pdf` diagram).
 - κ symbol: in notebooks, the variable currently named `kappa_samples` should be renamed `tau_cav_samples` to avoid clash with the κ linewidth symbol used in the text (1/κ = τ_cav)
 
 ## Status (July 2026 review — branch `final-review-pre-submission`)
@@ -132,7 +132,15 @@ The full pre-submission review is done. Thesis builds clean (no errors, no undef
 - ch. 02 all three physics corrections applied (straddling regime, fluxonium half-flux, Rabi label).
 - Figures wired in: fig1 + fig5 in ch. 07 body; fig2/fig6/fig8 in App B alongside the code that makes them.
 - System-chain diagram (`figures/system_topology.pdf`) is in ch. 03.
-- All `\cite` keys resolve and every `references.bib` entry is a real, correctly-referenced paper (verified). The bibliography has **16** entries; the newest, `QbloxQICK2026`, is the primary Qblox newsroom release (24 Jun 2026) on the finalised DOE/Fermilab/Qblox agreement to commercialise QICK, cited in ch. 03 for QICK's move toward a commercially supported standard.
+- All `\cite` keys resolve and every `references.bib` entry is a real, correctly-referenced paper (verified). The bibliography has **17** entries. `QbloxQICK2026` = primary Qblox newsroom release (24 Jun 2026) on the finalised DOE/Fermilab/Qblox agreement to commercialise QICK (ch. 03). `QICKtprocv2` = the meeg/qick_demos_sho tProcessor-V2 demo + firmware build `2024-09-03_216_tprocv2r21_demo` actually used (ch. 04).
+- **Honest-attribution framing (supervisor-corrected, do not regress):** phase calibration, the `condj` demo, and the π-pulse/active-reset sequence are adapted from the QICK demos, not original designs. Contributions in ch. 01/06/08 say "set up / reproduced / following the QICK examples / outlined", NOT "developed/designed/demonstrated". The genuine contributions are the systematic integration+characterisation and the ML discrimination study.
+- **Pyro4 removed everywhere** — the board was driven over SSH + Jupyter on the on-board PYNQ, not via a persistent Pyro4 remote server. Do not reintroduce Pyro4.
+- **V2 API — RESOLVED.** The real acquisition code is in `code/qick/` (esp. `frequency_sweep_tprocv2.ipynb`). It uses `AveragerProgramV2` (from `qick.asm_v2`) with `_initialize`/`_body`, `declare_gen`/`declare_readout`, `add_readoutconfig`/`send_readoutconfig`, `add_pulse`/`pulse(name=...)`, `trigger(ros=[...])`, `delay_auto` (replaces `synci`); units are µs and gain is normalised −1..1; `nqz=2` for the >6 GHz tones. Resonator spectroscopy uses a **Python outer loop** (one compiled program per freq), not `add_loop`. §3.2, §5.3, and Appendix A were rewritten to this API; the v1 `PhaseCalProgram`/`SweepProgram(RAveragerProgram)` listings were replaced by the real v2 `SweepProgram(AveragerProgramV2)` frequency-sweep program. Do NOT reintroduce v1 class names (`RAveragerProgram`, `set_pulse_registers`, `synci`, `mathi`+`sreg` sweeps).
+- **Channel-mapping table (ch. 04 Table 2) — CORRECTED** to the v2 notebook values (gen 0 / RO 0, JHC3/JHC7; second mux8 path noted). Diagram `figures/system_topology.pdf` regenerated from the corrected `.svg` (soffice --convert-to pdf + pdfcrop; no inkscape/rsvg in this env — soffice preserves the aspect ratio, chrome does not). Balun-bypass now also notes `nqz=2` (2nd Nyquist) for the >6 GHz tones.
+- **Diagram regen recipe** (if the SVG changes again): edit `figures/system_topology.svg` text labels, then `soffice --headless --convert-to pdf --outdir <tmp> st.svg && pdfcrop --margins 2 st.pdf system_topology.pdf`. Verify the cropped aspect ratio ≈ 1.48 (680:460) and eyeball a `pdftoppm` PNG. Included at `width=0.92\columnwidth`, so absolute size is irrelevant.
+- **Front-end is the XM655** (author-confirmed). The `code/qick/` notebook comments that called it a "QICK box" were wrong and have been corrected to "XM655" across all five notebooks. There is an external Mini-Circuits VLF-7200+ LPF in the readout path (Setup 1); could be mentioned in ch3/5 if desired but not required.
+- **OPEN — Appendix A phase-cal listing.** The v1 `PhaseCalProgram` was removed (didn't match v2); no real v2 phase-cal code was available. If a v2 phase-cal listing is wanted, get it from the author.
+- **Extra material now in `code/qick/`** not yet used in the thesis: VLF-7200+ LPF characterisation (`vlf7200_characterisation.png`), balun signal-path details, `nqz=2` usage — could enrich ch. 03/05 if desired. Note `code/qick/` also has v1 notebooks (`*_tprocv1.ipynb`, `frequency_sweep.ipynb`) — early work was v1, final experiments v2.
 - All `\todo` markers removed; acknowledgements written.
 - CNN number set corrected everywhere to the notebook ground truth (see Confirmed ML results).
 
