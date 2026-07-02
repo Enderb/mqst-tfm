@@ -64,13 +64,12 @@ power-on.  The \QICK{} firmware comprises:
 \begin{itemize}
       \item \textbf{Signal generators}: DDS-based waveform engines that drive the
             DACs with arbitrary envelopes, constant tones, or flat-top pulses.
-            Generator 6 (physical port 2\_231 on the ZCU216) is used as the primary
-            readout generator throughout this work.
+            Generator 0 (the \texttt{axis\_signal\_gen\_v6} engine, DAC tile 2 block 0)
+            is used as the primary readout generator throughout this work.
       \item \textbf{Readout blocks}: ADC-side DDS demodulators that down-convert the
             received signal to baseband.  Each readout block provides both a decimated
             output (time-domain I/Q waveform) and an accumulation buffer (averaged I/Q
-            pair).  Readout channel 0 (ADC port 0\_226) corresponds to the first ADC
-            pair on the XM655 breakout.
+            pair).  Readout channel 0 (ADC tile 2 block 0) receives the returning tone.
       \item \textbf{tProcessor V2}: a soft-processor that orchestrates pulse timing
             with nanosecond precision.  It executes a custom instruction set including
             direct memory writes (\texttt{memri}), register arithmetic (\texttt{mathi},
@@ -85,22 +84,25 @@ exposes high-level classes for writing and running experiments:
 \begin{itemize}
       \item \texttt{QickSoc}: instantiates the full hardware stack, loads the
             bitstream, and provides access to the converters and tProcessor.
-      \item \texttt{QickProgram} / \texttt{AveragerProgram} / \texttt{RAveragerProgram}:
-            abstractions for writing measurement sequences at increasing levels of
-            automation.  \texttt{RAveragerProgram} enables FPGA-internal parameter
-            sweeps via the tProcessor's \texttt{update()} hook, avoiding Python
-            overhead between experiment points.
-      \item Remote operation: a persistent Pyro4 server running on the board makes it
-            possible to control the board from a laptop over a standard network
-            connection, without reinitialising the FPGA between notebook sessions.
-            This design also preserves the phase calibration across reconnects.
+      \item \texttt{AveragerProgramV2} (from \texttt{qick.asm\_v2}): the base class
+            for measurement sequences on the tProcessor-V2 firmware used here.  A
+            program subclasses it and defines \texttt{\_initialize()}, which declares
+            the generators and readouts and registers named pulses, and
+            \texttt{\_body()}, which plays those pulses, triggers the readout, and
+            advances time with \texttt{delay\_auto()}.  Parameter sweeps run either
+            inside the FPGA via \texttt{add\_loop()} or across separately compiled
+            programs from a Python loop (Section~\ref{subsec:spectroscopy}).
 \end{itemize}
+
+In this work the board was accessed over SSH and driven from Jupyter notebooks
+running in the on-board PYNQ environment, which is how all the experiments
+reported here were carried out.
 
 \subsection{XM655 Analogue Front-End Module}
 \label{subsec:xm655}
 
 The ZCU216's RF converters use differential signalling on High-Density (HD)
-headers (JHC3 and JHC5 on the board).  The XM655 module is Xilinx's daughter-card
+headers (the DAC and ADC used here sit on JHC3 and JHC7).  The XM655 module is Xilinx's daughter-card
 solution: it provides BALUN (balanced-to-unbalanced) transformers that convert the
 differential DAC outputs and ADC inputs to/from single-ended SMA ports, along with
 optional filtering.
@@ -108,11 +110,13 @@ optional filtering.
 The key constraint introduced by the XM655 in this work is its bandwidth: the
 BALUNs cover \SIrange{10}{6000}{\mega\hertz}, so resonator frequencies above
 \SI{6}{\giga\hertz} require connections directly on the HD header pins using pigtail
-cables.
+cables.  Those tones also fall in the DAC's second Nyquist zone, so the generator is
+run with \texttt{nqz=2} to synthesise them; this, together with the balun rolloff,
+is why the highest resonators are reached by bypassing the XM655 baluns.
 
 The loopback path used for calibration experiments consists of:
-DAC port 2\_231 (JHC3) $\to$ HD2-SMA pigtail $\to$ BALUN $\to$ SMA cable
-$\to$ BALUN $\to$ HD2-SMA pigtail $\to$ ADC port 0\_226 (JHC5).
+DAC tile 2 blk 0 (JHC3) $\to$ HD-SMA pigtail $\to$ BALUN $\to$ SMA cable
+$\to$ BALUN $\to$ HD-SMA pigtail $\to$ ADC tile 2 blk 0 (JHC7).
 
 Figure~\ref{fig:system_topology} shows the high-level signal flow from the
 tProcessor to the qubit chip and back.
@@ -121,13 +125,13 @@ tProcessor to the qubit chip and back.
       \centering
       \includegraphics[width=0.92\columnwidth]{figures/system_topology}
       \caption{System signal chain for the \QICK{}-based readout platform.  The
-            tProcessor V2 sequences pulses on two generator channels: signal gen~6
-            (DAC~2\_231) drives the readout tone through the XM655 TX BALUN to the
-            resonator; signal gen~N drives the qubit directly via a second TX BALUN
-            channel for $\pi$-pulse control (the specific channel number depends on
-            the final wiring and is left as~N here).  The reflected readout tone
-            returns through the XM655 RX BALUN to ADC~0\_226 and is demodulated to
-            an IQ pair by readout channel~0.  The XM655 BALUNs cover
+            tProcessor V2 sequences pulses on two generator channels: the readout
+            generator drives the readout tone through the XM655 TX BALUN to the
+            resonator, and a second generator drives the qubit directly via a second
+            TX BALUN channel for $\pi$-pulse control.  The reflected readout tone
+            returns through the XM655 RX BALUN to the readout ADC and is demodulated
+            to an IQ pair (the channel and port numbers are those of
+            Table~\ref{tab:channels}).  The XM655 BALUNs cover
             \SIrange{10}{6000}{\mega\hertz}; resonator frequencies above
             \SI{6}{\giga\hertz} require direct HD-header pigtail connections,
             bypassing the XM655.  The qubit chip and its connections are shown as a

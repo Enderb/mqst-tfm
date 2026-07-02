@@ -17,7 +17,7 @@
   <style>
     text { font-family: sans-serif; }
     .th  { font-size: 14px; font-weight: 500; fill: #2C2C2A; }
-    .ts  { font-size: 12px; font-weight: 400; fill: #5F5E5A; }
+    .ts  { font-size: 10.5px; font-weight: 400; fill: #5F5E5A; }
     .c-purple rect { fill: #EEEDFE; stroke: #534AB7; }
     .c-purple .th  { fill: #3C3489; }
     .c-purple .ts  { fill: #534AB7; }
@@ -47,8 +47,8 @@
 <!-- Signal gen 6 (readout) -->
 <g class="c-teal">
   <rect x="152" y="64" width="112" height="52" rx="6" stroke-width="0.5"/>
-  <text class="th" x="208" y="85" text-anchor="middle" dominant-baseline="central">Signal gen 6</text>
-  <text class="ts" x="208" y="103" text-anchor="middle" dominant-baseline="central">Readout, DAC 2_231</text>
+  <text class="th" x="208" y="85" text-anchor="middle" dominant-baseline="central">Signal gen 0</text>
+  <text class="ts" x="208" y="103" text-anchor="middle" dominant-baseline="central">DAC tile 2, blk 0</text>
 </g>
 
 <!-- Signal gen N (qubit drive) -->
@@ -67,14 +67,14 @@
 <g class="c-teal">
   <rect x="152" y="348" width="112" height="52" rx="6" stroke-width="0.5"/>
   <text class="th" x="208" y="369" text-anchor="middle" dominant-baseline="central">Readout ch. 0</text>
-  <text class="ts" x="208" y="387" text-anchor="middle" dominant-baseline="central">ADC 0_226</text>
+  <text class="ts" x="208" y="387" text-anchor="middle" dominant-baseline="central">ADC tile 2 blk 0</text>
 </g>
 
 <!-- IQ output -->
 <g class="c-purple">
   <rect x="36" y="348" width="100" height="52" rx="6" stroke-width="0.5"/>
   <text class="th" x="86" y="369" text-anchor="middle" dominant-baseline="central">IQ output</text>
-  <text class="ts" x="86" y="387" text-anchor="middle" dominant-baseline="central">Decimated / accum.</text>
+  <text class="ts" x="86" y="387" text-anchor="middle" dominant-baseline="central">Decimated/accum.</text>
 </g>
 
 <!-- Readout ch to IQ output (blue) -->
@@ -88,21 +88,21 @@
 <g class="c-amber">
   <rect x="330" y="80" width="94" height="46" rx="6" stroke-width="0.5"/>
   <text class="th" x="377" y="98" text-anchor="middle" dominant-baseline="central">BALUN (RO TX)</text>
-  <text class="ts" x="377" y="114" text-anchor="middle" dominant-baseline="central">Diff. &#x2192; single-ended</text>
+  <text class="ts" x="377" y="114" text-anchor="middle" dominant-baseline="central">diff. &#x2192; single</text>
 </g>
 
 <!-- BALUN DR TX -->
 <g class="c-amber">
   <rect x="330" y="183" width="94" height="46" rx="6" stroke-width="0.5"/>
   <text class="th" x="377" y="201" text-anchor="middle" dominant-baseline="central">BALUN (DR TX)</text>
-  <text class="ts" x="377" y="217" text-anchor="middle" dominant-baseline="central">Diff. &#x2192; single-ended</text>
+  <text class="ts" x="377" y="217" text-anchor="middle" dominant-baseline="central">diff. &#x2192; single</text>
 </g>
 
 <!-- BALUN RX -->
 <g class="c-amber">
   <rect x="330" y="340" width="94" height="46" rx="6" stroke-width="0.5"/>
   <text class="th" x="377" y="358" text-anchor="middle" dominant-baseline="central">BALUN (RX)</text>
-  <text class="ts" x="377" y="374" text-anchor="middle" dominant-baseline="central">Single-ended &#x2192; diff.</text>
+  <text class="ts" x="377" y="374" text-anchor="middle" dominant-baseline="central">single &#x2192; diff.</text>
 </g>
 
 <!-- Loopback note -->
@@ -133,7 +133,7 @@
 <g class="c-blue">
   <rect x="490" y="220" width="112" height="46" rx="6" stroke-width="0.5"/>
   <text class="th" x="546" y="238" text-anchor="middle" dominant-baseline="central">Qubit</text>
-  <text class="ts" x="546" y="254" text-anchor="middle" dominant-baseline="central">Fluxonium / transmon</text>
+  <text class="ts" x="546" y="254" text-anchor="middle" dominant-baseline="central">Fluxonium/transmon</text>
 </g>
 
 <!-- Resonator to Qubit coupling -->

@@ -48,8 +48,10 @@ point.  The per-shot integrated IQ noise is determined by the within-window
 averaging over $T_\text{win}$ samples, not by the number of repeated shots.
 From the real SSRO data, the per-shot cluster widths are approximately
 \SI{0.65}{}--\SI{0.97}{ADU} per quadrature (state-dependent), with an IQ
-separation of \SI{2.53}{ADU} and a projected SNR of 2.46, yielding a single-shot
-fidelity of 0.906~\cite{Walter2017}.
+separation of \SI{2.53}{ADU} and a projected SNR of 2.46.  The single-shot
+assignment fidelity extracted from these clusters is 0.906 (the LDA baseline of
+Section~\ref{subsec:integrated_iq}), within the range of reported high-fidelity
+single-shot dispersive readouts~\cite{Walter2017}.
 
 For applications that do \emph{not} require single-shot resolution, such as
 resonator spectroscopy or Rabi calibration, the same shot can be repeated
@@ -74,25 +76,23 @@ sweeping the probe frequency around the estimated resonator frequency and measur
 the transmitted or reflected IQ amplitude.  In \QICK{}, there are two sweep
 strategies:
 
-\paragraph{Fast sweep (\texttt{RAveragerProgram}).}
-The tProcessor increments the DAC DDS frequency register at each experiment step
-via the \texttt{update()} method.  This approach is fast because the FPGA handles
-all steps with no Python round-trips.  However, the ADC NCO frequency is set via
-the ARM AXI bus and cannot be updated by the tProcessor.  For resonator
-spectroscopy, both the DAC and ADC frequencies must track together; this is not
-achievable with the fast method.
+\paragraph{FPGA-internal sweep (\texttt{add\_loop}).}
+On the tProcessor-V2 firmware a parameter such as the drive frequency can be swept
+inside the FPGA with \texttt{add\_loop}, stepping through all points with no Python
+round-trips.  The readout down-conversion frequency must track the drive to keep the
+demodulated signal at baseband, though, and it is set per program rather than stepped
+in this loop; for spectroscopy, where the two must move together, this sweep alone is
+insufficient.
 
-\paragraph{Slow sweep (Python outer loop).}
-A \texttt{for} loop in Python updates both the DAC generator frequency and the
-ADC readout frequency at each step.  The per-step overhead is a few milliseconds
-(dominated by network round-trips in remote mode), but this approach can sweep
-\emph{any} parameter, including the ADC NCO.  This is the correct approach for
-resonator spectroscopy.
-
-In practice, a Python loop steps both the generator and readout frequencies
-together, runs an \texttt{AveragerProgram} at each point, and records the magnitude
-$|I + jQ|$ of the accumulated phasor.  The resonator frequency is identified as the
-dip (reflection) or peak (transmission) in the swept amplitude response.
+\paragraph{Python outer loop.}
+A Python loop instead compiles and runs one \texttt{AveragerProgramV2} per frequency
+point, setting the generator and matching readout down-conversion frequencies
+together each time (\texttt{add\_readoutconfig} with \texttt{gen\_ch} lets \QICK{}
+compute the ADC alias automatically).  The per-point overhead is a few milliseconds,
+but it can sweep any parameter, including the readout frequency, and is the approach
+used here.  At each point the magnitude $|I + jQ|$ of the accumulated phasor is
+recorded; the resonator shows up as the dip (reflection) or peak (transmission) in
+the swept response.
 
 \subsection{Multiplexed Readout}
 \label{subsec:multiplex}
@@ -120,7 +120,7 @@ Multiplexed readout via the \QICK{} PFB firmware was not implemented within the
 scope of this work.  The single-tone DDS architecture described in
 Sections~\ref{subsec:decimated_vs_accum} and~\ref{subsec:spectroscopy} was used
 throughout.  A natural next step is to extend the architecture to cover the four
-Dátil resonator frequencies characterised at Qilimanjaro: 6.505, 6.730, 6.978,
+resonator frequencies of one of Qilimanjaro's chips: 6.505, 6.730, 6.978,
 and \SI{7.389}{\giga\hertz}.  These frequencies lie above the \SI{6}{\giga\hertz}
 upper edge of the XM655 BALUN passband, so simultaneous multiplexed readout at all
 four tones would require direct HD-header connections with discrete BALUNs, as
