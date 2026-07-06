@@ -27,10 +27,11 @@ Fermilab finalised an agreement for the control-electronics vendor Qblox to
 commercialise and distribute it~\cite{QbloxQICK2026}.  Other RFSoC boards would
 also run \QICK{}; the ZCU216 is the one that was available for this project.
 
-The board runs the PYNQ Linux distribution, which exposes the FPGA fabric and the
-converters through Python libraries, making it straightforward to implement and
-iterate on firmware/software stacks.  Table~\ref{tab:zcu216} summarises the key
-specifications relevant to this thesis.
+The board boots the PYNQ image, an Ubuntu-based userspace with a Xilinx kernel,
+which provides Python bindings (AXI4-Lite register access, DMA, and interrupts) to
+the IP in the loaded overlay, including the data converters.  This makes it
+straightforward to iterate on firmware/software stacks.  Table~\ref{tab:zcu216}
+summarises the key specifications relevant to this thesis.
 
 \begin{table}[ht]
       \centering
