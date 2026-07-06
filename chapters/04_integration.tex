@@ -44,7 +44,11 @@ Readout 0                                    & ADC tile 2, blk 0 & JHC7 & IQ acq
 
 A second path (generator 3, the \texttt{axis\_sg\_mux8\_v1} multiplexed engine, into
 readout 6 on JHC8) was also exercised, to compare a filtered against an unfiltered
-front end; the single \texttt{axis\_signal\_gen\_v6} path above is the one used for
+front end: sweeping the same loopback path with and without the readout low-pass
+filter (a Mini-Circuits VLF-7200+) placed its $-3$\,dB edge at
+${\approx}\SI{8.4}{\giga\hertz}$, against the \SI{8.15}{\giga\hertz} nominal
+specification and clear of the swept band.
+The single \texttt{axis\_signal\_gen\_v6} path above is the one used for
 the measurements reported here.
 
 \subsection{Phase Calibration}
@@ -53,7 +57,7 @@ the measurements reported here.
 Each time the ZCU216 is powered on or the FPGA bitstream is reloaded, the DDS
 oscillators in the DAC and ADC blocks boot with a random mutual phase offset
 $\phi$.  Without compensation, IQ measurements rotate unpredictably between
-sessions, making it impossible to compare results across power cycles.
+sessions, so results cannot be compared across power cycles.
 
 \paragraph{Phase model.}
 A loopback tone from the readout DAC to the readout ADC measures $\phi$ at a given

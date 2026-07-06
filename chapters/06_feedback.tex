@@ -5,19 +5,25 @@
 A key motivation for FPGA-based control is the ability to execute
 \emph{real-time} conditional logic: perform a measurement, make a decision, and
 apply a corrective pulse, all on the FPGA.
-This section describes the tProcessor v2 instruction set, demonstrates the
+This section describes the tProcessor instruction set, demonstrates the
 conditional branching primitive, and outlines the active qubit reset protocol.
 
 \subsection{tProcessor Architecture}
+\label{subsec:tproc_arch}
 
-The tProcessor v2 is a soft-processor synthesised in the FPGA fabric, with a
-custom instruction set tailored to pulse generation and readout sequencing.  Each
+The tProcessor is a soft-processor synthesised in the FPGA fabric, with a
+custom instruction set tailored to pulse generation and readout sequencing.  In
+the original (v1) design~\cite{Stefanazzi2022}, on whose demo firmware the
+branching demonstration below was run, each
 channel page holds 32 general-purpose 64-bit registers, with cross-page registers
 for inter-channel synchronisation.  Dedicated instructions fire the DAC generators
 or arm the ADC acquisition windows, while timing instructions advance the schedule:
 \texttt{synci} moves the tProcessor clock without touching the channel timelines,
 \texttt{sync\_all} aligns all channels, and \texttt{wait\_all} stalls until the
-readout windows close.  The primitive that matters for feedback is the conditional
+readout windows close.  The primitive that matters for feedback, common to v1 and
+the tProcessor v2 build used for the readout experiments
+(\texttt{qick\_processor} rev 21: \SI{200}{\mega\hertz} core execution clock,
+pulse timing resolved on a \SI{614.4}{\mega\hertz} timing clock), is the conditional
 branch \texttt{condj page, reg\_a, op, reg\_b, label}, which jumps to \texttt{label}
 when \texttt{reg\_a op reg\_b} holds.
 
@@ -43,22 +49,20 @@ def body(self):
     self.sync_all(self.us2cycles(cfg["relax_delay"]))
 \end{minted}
 
-The demo runs on the original v1-style programming interface (\texttt{body},
-\texttt{synci}), not the tProcessor v2 API used elsewhere
-(Section~\ref{subsec:qick_stack}); the conditional-branch primitive is common to
-both.  Registers 1 and 2 are pre-loaded with the threshold and the test value via
+The demo uses the v1-style programming interface (\texttt{body}, \texttt{synci};
+Section~\ref{subsec:tproc_arch}), not the tProcessor v2 API used elsewhere
+(Section~\ref{subsec:qick_stack}).  Registers 1 and 2 are pre-loaded with the threshold and the test value via
 \texttt{regwi}.  When \texttt{number=100, threshold=50}: the condition
 \texttt{100 < 50} is false, the pulse fires, and the ADC captures a loopback
 signal.  When \texttt{number=10, threshold=50}: the condition is true, the pulse
 is skipped, and the ADC trace is flat noise.
 
 \paragraph{Timing subtlety.}
-Inside a \texttt{body()} with an open ADC acquisition window, \texttt{synci}
-must be used to advance time between pulses, not \texttt{sync\_all}.
-\texttt{sync\_all} advances all channel timelines to the furthest point, which
-is the end of the ADC window; subsequent pulses would then be scheduled after
-the window has closed.  \texttt{synci} advances only the tProcessor's internal
-counter, leaving the ADC timeline undisturbed.
+Inside a \texttt{body()} with an open ADC acquisition window, time must be
+advanced with \texttt{synci}, not \texttt{sync\_all}: \texttt{sync\_all} advances
+all channel timelines to the furthest point, the end of the ADC window, so
+subsequent pulses would land after it closes; \texttt{synci} advances only the
+tProcessor's internal counter.
 
 \subsection{\texorpdfstring{$\pi$}{π} Pulse Calibration}
 \label{subsec:pi_pulse}
@@ -72,9 +76,8 @@ be followed once the ZCU216 is connected to a device.
 The $\pi$ pulse amplitude is found via a \emph{Rabi experiment}: the qubit drive
 pulse amplitude is swept from zero, and the readout signal oscillates between the
 $\ket{0}$ and $\ket{1}$ IQ clusters as the qubit is driven through successive
-half-turns on the Bloch sphere.  The first amplitude at which the signal crosses
-from the $\ket{0}$ cluster to the $\ket{1}$ cluster determines the $\pi$ pulse
-amplitude.  The Rabi sequence is:
+half-turns on the Bloch sphere.  The first amplitude at which the signal fully
+crosses to the $\ket{1}$ cluster is the $\pi$ amplitude.  The Rabi sequence is:
 \begin{enumerate}
   \item Prepare qubit in $\ket{0}$ (wait $\gg T_1$).
   \item Apply qubit drive pulse at frequency $\omega_{01}$ with variable amplitude
@@ -105,19 +108,20 @@ primitives, would be deployed once the board is connected to a qubit chip:
   \item \textbf{Dispersive readout}: fire the readout tone and acquire the
         accumulated IQ result.
   \item \textbf{Thresholding}: the readout firmware compares the IQ result against
-        a pre-calibrated threshold and writes a binary decision (0 or 1) into a
+        a pre-calibrated threshold and writes the binary decision into a
         tProcessor register.
   \item \textbf{Conditional $\pi$ pulse}: \texttt{condj} checks the decision
-        register.  If the qubit is in $\ket{1}$, a calibrated $\pi$ pulse is
-        applied on the qubit drive channel.  Otherwise, the pulse is skipped.
+        register and applies a calibrated $\pi$ pulse on the qubit drive channel
+        only if the qubit is in $\ket{1}$.
   \item \textbf{Wait}: allow any residual photons in the resonator to decay before
         starting the experiment.
 \end{enumerate}
 
 Because the entire decision-to-pulse path would run inside the tProcessor, the
 latency between completing the readout window and firing the corrective pulse is
-determined solely by FPGA clock cycles.  For the ZCU216 operating at a
-\SI{384}{\mega\hertz} fabric clock, this latency is of order tens of nanoseconds.
+determined solely by FPGA clock cycles.  For the tProcessor v2 build used here,
+with its \SI{200}{\mega\hertz} core execution clock, this latency is of order tens
+of nanoseconds.
 
 \subsection{Latency Budget}
 
@@ -134,8 +138,8 @@ Stage & Latency & Notes \\
 \midrule
 Readout pulse duration     & \SIrange{0.5}{2}{\micro\second}   & Depends on $\kappa$ \\
 ADC integration window     & \SIrange{0.5}{2}{\micro\second}   & \\
-FPGA decision (threshold)  & $\sim$\SI{10}{\nano\second}        & tProcessor cycles \\
-Conditional branch         & $\sim$\SI{3}{\nano\second}         & 1 tProc cycle \\
+FPGA decision (threshold)  & $\sim$\SI{10}{\nano\second}        & A few core cycles \\
+Conditional branch         & $\sim$\SI{5}{\nano\second}         & 1 core cycle (\SI{200}{MHz}) \\
 $\pi$ pulse duration       & \SIrange{50}{500}{\nano\second}    & Set by drive strength; $\ll T_1$ \\
 \midrule
 Total (excl. readout)      & $<$\SI{1}{\micro\second}           & \\

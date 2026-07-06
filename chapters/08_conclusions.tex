@@ -4,69 +4,67 @@
 
 \subsection{Summary}
 
-This thesis has documented the setup, characterisation, and initial evaluation of a
-\QICK{}-based readout architecture on a ZCU216 RFSoC, together with the design of a
-machine-learning-assisted discrimination pipeline on existing experimental data.
-The main contributions are:
+This thesis documented the setup, characterisation, and initial evaluation of a
+\QICK{}-based readout architecture on a ZCU216 RFSoC, and a
+machine-learning-assisted discrimination pipeline designed on existing experimental
+data.  The main contributions are:
 
 \begin{enumerate}
   \item \textbf{System integration}: The ZCU216 board, XM655 analogue front-end,
-        and \QICK{} firmware were set up for use in data collection, including SSH
-        access, PYNQ configuration, and a Jupyter-notebook workflow for running
-        experiments on the board.
+        and \QICK{} firmware were set up for data collection, including SSH
+        access, PYNQ configuration, and a Jupyter-notebook workflow on the board.
 
   \item \textbf{Phase-coherent readout calibration}: Following the \QICK{} examples,
-        the phase-calibration procedure was set up and validated on this system: it
-        measures the random DAC--ADC DDS phase offset at each power-on and fits the
-        linear model $\phi(f) = \phi_0 - 360^\circ \tau f$, with the fitted
-        \texttt{res\_phase} folded into the standard experiment configuration.
+        the phase calibration was set up and validated on this system: it
+        measures the random DAC--ADC DDS phase offset at each power-on, fits
+        $\phi(f) = \phi_0 - 360^\circ \tau f$, and folds the fitted
+        \texttt{res\_phase} into the experiment configuration.
 
   \item \textbf{Readout data-path}: The decimated and accumulated readout modes
-        were characterised.  Accumulated readout gives one integrated $(I, Q)$ pair
-        per shot for SSRO; repeat-averaging improves spectroscopy SNR but destroys
-        the single-shot information.  A resonator spectroscopy workflow was
-        implemented and validated in loopback; its extension to multiplexed
+        were characterised: accumulated readout gives one integrated $(I, Q)$ pair
+        per shot for SSRO, and repeat-averaging improves spectroscopy SNR but
+        destroys single-shot information.  A resonator spectroscopy workflow was
+        validated in loopback; its extension to multiplexed
         readout was assessed but not implemented.
 
   \item \textbf{Real-time feedback primitives}: The \QICK{} \texttt{condj}
         conditional-branch demo was reproduced in loopback, and an active-reset
         sequence (dispersive readout, thresholding, calibrated $\pi$ pulse) was
-        outlined from these primitives, with an estimated digital decision-to-fire
+        outlined from these primitives, with estimated decision-to-fire
         latency below \SI{100}{\nano\second}.
 
   \item \textbf{ML-assisted discrimination}: On integrated IQ data, LDA reaches an
         assignment fidelity of 90.6\% ($\ket{0}$: 94.0\%, $\ket{1}$: 87.3\%), and a
-        grid search over 20 MLP architectures finds no nonlinear classifier that
-        improves on it, as expected for near-Gaussian, linearly separable blobs.
-        The $\ket{1}$ deficit is the signature of $T_1$ relaxation mid-shot.  A
+        grid search over 20 MLP architectures finds no improvement, as expected for
+        near-Gaussian, linearly separable blobs; the $\ket{1}$ deficit is the
+        signature of mid-shot $T_1$ relaxation.  A
         953-parameter 1D CNN on synthetic raw traces reaches 99.75\% overall
         fidelity and 98.4\% accuracy on the 122 relaxation shots, against 44.3\%
-        for LDA; because the synthetic set over-represents relaxation, the robust
-        conclusion is the qualitative advantage of raw-trace input rather than the
-        size of the gap.  FPGA deployment remains future work;
-        Section~\ref{subsec:deployment_path} outlines the path toward it.
+        for LDA; the synthetic set over-represents relaxation, so the robust
+        conclusion is the qualitative raw-trace advantage rather than the size of
+        the gap.  FPGA deployment remains future work
+        (Section~\ref{subsec:deployment_path}).
 \end{enumerate}
 
 \subsection{Outlook}
 
-Several extensions follow directly from the results above.  The first experimental
+Several extensions follow from these results.  The first experimental
 priority is to collect a real \texttt{SSRO\_raw.h5} dataset from the ZCU216 with
 \texttt{acquire\_decimated}, retrain the CNN, and check that the $T_1$-relaxation
-recovery generalises to real data; the synthetic $T_1$ should first be recalibrated
+recovery generalises; the synthetic $T_1$ should first be recalibrated
 to the measured $\ket{1}$ error rate of 12.7\%, an upper bound on the relaxation
 fraction (part of it is Gaussian-overlap error, cf.\ the 6.0\% $\ket{0}$ error
 rate), implying $T_1 \gtrsim 1500$ samples rather than the 600 used
 here.  With real traces in hand, the
-CNN can be exported via \texttt{hls4ml} and synthesised as a fixed-point IP block in
+CNN can be exported via \texttt{hls4ml} into a fixed-point IP block in
 the QICK bitstream (Section~\ref{subsec:deployment_path}), closing the active-reset
-loop at full speed without a software round-trip.
+loop without a software round-trip.
 
-Beyond a single qubit, extending to multiplexed readout via the \QICK{} PFB firmware
-would allow simultaneous readout of all qubits in Qilimanjaro's multi-qubit chips, a
-prerequisite for quantum error-correction cycles.  The \QICK{}-based readout layer
-should also be integrated with Qilimanjaro's higher-level programming interfaces
-(circuit compilation, calibration databases, experiment management) for a
-production-ready stack.  Finally, the fluxonium dispersive shift varies strongly
-across the external-flux landscape, and an ML-assisted optimisation of the readout
-circuit parameters to maximise the cavity pull over that landscape is a natural
+Beyond a single qubit, multiplexed readout via the \QICK{} PFB firmware
+would allow a full chip to be read out simultaneously, a
+prerequisite for error-correction cycles, and the readout layer
+should be integrated with Qilimanjaro's higher-level stack
+(compilation, calibration databases, experiment
+management).  ML-assisted optimisation of the readout circuit to
+maximise the fluxonium cavity pull across its flux landscape is a further
 complementary direction.

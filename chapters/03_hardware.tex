@@ -29,7 +29,7 @@ also run \QICK{}; the ZCU216 is the one that was available for this project.
 
 The board boots the PYNQ image, an Ubuntu-based userspace with a Xilinx kernel,
 which provides Python bindings (AXI4-Lite register access, DMA, and interrupts) to
-the IP in the loaded overlay, including the data converters.  This makes it
+the IP in the loaded overlay, including the data converters, making it
 straightforward to iterate on firmware/software stacks.  Table~\ref{tab:zcu216}
 summarises the key specifications relevant to this thesis.
 
@@ -80,8 +80,9 @@ power-on.  The \QICK{} firmware comprises:
             with nanosecond precision.  It executes a custom instruction set including
             direct memory writes (\texttt{memri}), register arithmetic (\texttt{mathi},
             \texttt{regwi}), conditional branches (\texttt{condj}), and pulse triggers.
-            The ZCU216 uses the 64-bit variant of the tProcessor, which extends the
-            original 32-bit design with wider arithmetic and richer branching.
+            The build used here runs \texttt{qick\_processor} rev 21 with a
+            \SI{200}{\mega\hertz} core execution clock and pulse timing resolved on
+            a \SI{614.4}{\mega\hertz} timing clock.
 \end{itemize}
 
 \paragraph{Software.}

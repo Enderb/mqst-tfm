@@ -32,8 +32,8 @@ modes are available:
 \paragraph{Decimated readout.}
 Stores the full time-domain I/Q waveform over the readout window (e.g.\ 1000
 samples).  This is essential for setup: it reveals when the readout pulse arrives
-relative to the trigger (\texttt{adc\_trig\_offset}), whether the integration
-window is correctly positioned, and whether the signal shape is as expected.  The
+relative to the trigger (\texttt{adc\_trig\_offset}), and whether the integration
+window and signal shape are as expected.  The
 per-sample noise on the decimated output is $\sim$\SI{1.9}{ADU} RMS; this is the
 raw sample-level noise floor, distinct from the per-shot integrated IQ noise
 reported for accumulated readout below.
@@ -51,7 +51,7 @@ Mahalanobis distance between the clusters
 (Section~\ref{subsec:integrated_iq}).  The single-shot
 assignment fidelity extracted from these clusters is 0.906 (the LDA baseline of
 Section~\ref{subsec:integrated_iq}), a typical value for dispersive readout
-without a quantum-limited parametric amplifier in the chain.
+without a quantum-limited parametric amplifier in the chain~\cite{Krantz2019}.
 
 For applications that do \emph{not} require single-shot resolution, such as
 resonator spectroscopy or Rabi calibration, the same shot can be repeated
