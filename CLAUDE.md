@@ -80,7 +80,7 @@ All notebooks in `code/`:
 | 07 | Three-part structure: (1) integrated IQ classifiers (LDA 0.906, QDA = LDA, arch search 20 configs); (2) raw-trace CNN (953 params, fidelity 0.9975, relaxation recovery); (3) deployment path. Figures fig1 (IQ scatter) + fig5 (grid search) kept in body; fig2/fig6/fig8 moved to App B. QDA + Mahalanobis (~2.4) justification present |
 | 08 | All 5 contributions summarised with real findings; outlook: multi-qubit PFB, on-FPGA deployment, Qilimanjaro stack integration |
 | App A | `PhaseCalProgram`, `SweepProgram` (RAveragerProgram), active-reset pseudocode |
-| App B (`app_b_figures.tex`, label `appendix:ml`) | Synthetic-trace model + CNN: condensed `generate_traces()` and `ReadoutCNN`/training listings, plus 3 supplementary figures (synthetic traces, training curve, CNN-confidence-vs-t\*). Does not count toward 20-page limit |
+| App B (`app_b_figures.tex`, label `appendix:ml`, retitled "Supplementary ML Material") | Grid-search figure (`fig5_grid_search`, moved from ch. 07 body for page budget) + synthetic-trace model + CNN: condensed `generate_traces()` and `ReadoutCNN`/training listings, plus 3 supplementary figures. **Figure include paths are the notebook-output names** `synthetic_traces` / `training_curve` / `cnn_relaxation_confidence` from `SSRO_synthetic_CNN.ipynb` — do NOT use `fig6_synthetic_traces`/`fig8_training_curve`/`fig9_relaxation_confidence`, which come from `SSRO_ML_discrimination.ipynb` Part III, a *different* experiment (T1=3000, 10000 shots, 100 epochs, LDA 0.8782) whose numbers were purged from the text. Does not count toward 20-page limit |
 
 ## Confirmed ML results (ch. 07)
 
@@ -96,16 +96,18 @@ These numbers are established and must not be changed without re-running the not
 
 **Part III — synthetic raw traces (`SSRO_synthetic_CNN.ipynb`), 800-shot test set, 122 relaxation shots:**
 
-| Metric | LDA | 1D CNN | Gain |
-|---|---|---|---|
-| Overall fidelity | 0.826 | **0.9975** | +17.1 pp |
-| \|0⟩ acc | 0.875 | 1.000 | +12.5 pp |
-| \|1⟩ acc (all) | 0.778 | 0.995 | +21.8 pp |
-| \|1⟩ acc (relaxation only) | **0.443** | **0.984** | **+54.1 pp** |
+| Metric | LDA | Log. reg. (raw trace) | 1D CNN | CNN gain vs LDA |
+|---|---|---|---|---|
+| Overall fidelity | 0.826 | 0.819 | **0.9975** | +17.1 pp |
+| \|0⟩ acc | 0.875 | 0.868 | 1.000 | +12.5 pp |
+| \|1⟩ acc (all) | 0.778 | 0.770 | 0.995 | +21.8 pp |
+| \|1⟩ acc (relaxation only) | **0.443** | 0.467 | **0.984** | **+54.1 pp** |
+
+The logistic-regression column (added July 6 2026, FABLE feedback) is the optimal *linear* temporal weighting on the flattened raw trace, L2-regularised with C=1e-3 chosen by 3-fold CV on the training set — computed in notebook cell "7b. Linear baseline on the raw traces" (seeded; verified to reproduce byte-identically from `SSRO_raw.h5`). Its role in the thesis: prove the CNN gain comes from nonlinearity, not from seeing more input.
 
 CNN = 953 params, `EPOCHS=60`, 2000 shots/state. **0.9975 is the canonical headline overall fidelity** (user-confirmed; the epoch-40 value 0.9950 also appears in the notebook). The LDA overall here (0.826) is *lower* than Part I's 0.906 because the synthetic set deliberately over-represents relaxation.
 
-Synthetic T1: `T1_samples = 600` (≈3.0 µs at 200 MSps), window T=200 samples, τ_cav=κ⁻¹=20 samples → relaxation fraction **≈ 28.3 %** (~566/2000 shots; 122 in the 800-shot test set). This is intentionally *higher* than the real device — a stress test of the recovery. To model the real device, recalibrate T1 to ~1200–1500 samples to match the measured ~12.75 % \|1⟩ error rate (future work). Do **not** claim the synthetic gap is the expected real-device gain; the robust claim is the qualitative raw-trace advantage.
+Synthetic T1: `T1_samples = 600` (≈3.0 µs at 200 MSps), window T=200 samples, τ_cav=κ⁻¹=20 samples → relaxation fraction **≈ 28.3 %** (~566/2000 shots; 122 in the 800-shot test set). This is intentionally *higher* than the real device — a stress test of the recovery. To model the real device, recalibrate T1 to ≳1500 samples (the 12.7 % \|1⟩ error rate is an *upper bound* on the relaxation fraction — part of it is Gaussian-overlap error, cf. the 6.0 % \|0⟩ error; solving 1−e^(−200/T1)=0.127 gives T1≈1470) — future work. Do **not** claim the synthetic gap is the expected real-device gain; the robust claim is the qualitative raw-trace advantage.
 
 **Framing of "synthetic" (supervisor-corrected, do not regress):** the raw traces are synthetic because the QPU was not accessible in time — Parts I/II used real *integrated* IQ from Qilimanjaro's databases, and raw per-sample traces are not routinely stored, so none existed to train the CNN. Collecting them is a motivation for setting up the ZCU216 (`acquire_decimated`). "Synthetic" = built from the real device's IQ statistics (centroids/covariances), not invented. Do NOT frame the missing raw data as an `acquire` vs `acquire_decimated` choice — that was an earlier wrong framing; the real reason is chip unavailability. Eq. 12 (cavity-response trace model) cites `Blais2021,Gambetta2007`.
 
@@ -124,6 +126,8 @@ Synthetic T1: `T1_samples = 600` (≈3.0 µs at 200 MSps), window T=200 samples,
 - κ symbol: in notebooks, the variable currently named `kappa_samples` should be renamed `tau_cav_samples` to avoid clash with the κ linewidth symbol used in the text (1/κ = τ_cav)
 
 ## Status (July 2026 review — branch `final-review-pre-submission`)
+
+**FABLE feedback pass (July 6 2026, branch `worktree-fable-feedback-fixes`)** — all critical/should-fix items of `FABLE_FEEDBACK.md` applied. Highlights: App B figures re-pointed to the correct notebook's outputs (see App B row above); fluxonium ω01 fixed (§6.3: transmons 4–8 GHz, fluxonium near half flux ~0.1–1 GHz); Eq. 12 now `1 − e^{−t/τ_cav}` with τ_cav ~ 1/κ defined operationally; abstract softened to "loopback signal chain … calibration workflow" (no balun/filter-rolloff promise); contribution 3 + ch. 08 item 3 aligned with §5.4 (multiplexed not implemented); ML latency budget unified to "a few hundred ns" (§7.2/§7.7, hls4ml latency hedged as expected-from-literature); PFB cost now O(log N) per sample vs O(N); straddling regime corrected (contributions *add* inside the regime; introduced for transmon); "perpendicular bisector" qualified with whitening everywhere; Table 1 = 425k LUTs (930k logic cells); ADC >6 GHz operation (6th Nyquist zone at 2.5 GS/s, beyond-spec rolloff) added to §3.3/§5.4; jitter no longer called deterministic; Table 3 π-pulse note fixed; 200 MS/s flagged as modelling convention (real decimated rate = fs/8); raw-trace logistic-regression baseline added to Table 8 + notebook cell 7b; i.i.d.-noise caveat added (§7.6.2/§7.6.4); §8.2 T1 recalibration now "upper bound … ≳1500 samples"; Table 4 gained σ_I/σ_Q rows (0.649/0.764/0.874/0.967 ADU); fig1 axes now ADU; acronyms expanded (SSRO/DRAG/AXI/IQ); Φx removed; `\QICK` macro now renders plain "QICK"; balun lowercase after first expansion; tProcessor v2 naming unified; Xilinx footnote (AMD acquisition) in ch. 01; Hastie2009 added for Eq. 5 (bibliography now **18** entries); UG1390 URL fixed; topology SVG qubit-drive generator labelled "(future)" and tProcessor v2. Page budget paid for by: moving the grid-search figure to App B, dedup trims (heterodyne intro, DDS spur sentence, outline, workflow checklist, compile-time-branching paragraph, fidelity Eq. 11 → ref to Eq. 4), and shrinking fig1 (0.55) + topology (0.88). Main text re-verified **exactly 20 pages**.
 
 The full pre-submission review is done. Thesis builds clean (no errors, no undefined refs/citations, no `\todo` markers), main text exactly 20 pages, submission target July 8 2026. Remote: `git@github.com:Enderb/mqst-tfm.git`; work lives on branch `final-review-pre-submission` (5 commits, pushed; PR not yet opened). `REVIEW_SUMMARY.md` at repo root is an untracked review artifact — keep it out of the LaTeX build.
 

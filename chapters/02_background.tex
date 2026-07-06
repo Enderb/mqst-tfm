@@ -3,10 +3,11 @@
 \label{sec:background}
 
 \subsection{Superconducting Qubits}
+\label{subsec:sc_qubits}
 
 Superconducting qubits are anharmonic LC oscillators whose nonlinearity is
 provided by one or more Josephson junctions~\cite{Krantz2019}.  The Josephson
-junction acts as a nonlinear inductor with energy $E_J\cos\hat{\varphi}$, where
+junction acts as a nonlinear inductor with potential energy $-E_J\cos\hat{\varphi}$, where
 $\hat{\varphi}$ is the superconducting phase across the junction and $E_J$ is the
 Josephson energy.  Combined with a shunt capacitance $C$ (charging energy
 $E_C = e^2/2C$), the system forms an artificial atom with a discrete, anharmonic
@@ -49,9 +50,9 @@ where $\omega_r$ is the resonator frequency, $\hat{a}$ ($\hat{a}^\dagger$) is th
 resonator annihilation (creation) operator, $g$ is the qubit--resonator coupling
 strength, and $\hat{n}_q$ is the relevant qubit operator (charge for capacitive
 coupling)~\cite{Krantz2019}.  When the qubit--resonator detuning is large compared
-to the coupling ($|g| \ll |\omega_{ij} - \omega_r|$), second-order perturbation
-theory in $g$ yields an effective qubit-state-dependent shift of the resonator
-frequency, derived in Section~\ref{subsec:dispersive} below.
+to the coupling, the qubit no longer exchanges energy with the resonator but still
+shifts its frequency; this dispersive limit is the subject of
+Section~\ref{subsec:dispersive}.
 
 \subsection{Dispersive Readout}
 \label{subsec:dispersive}
@@ -68,29 +69,34 @@ qubit-state-dependent shift of the resonator frequency~\cite{Blais2021}:
   \label{eq:dispersive_shift}
 \end{equation}
 where $g_{ij} = \braket{i|g\,\hat{n}_q|j}$ and $\omega_{ij} = \omega_j -
-  \omega_i$.  The two fractions are the co- and counter-rotating contributions of
+  \omega_i$; only the resonator part of the dispersive Hamiltonian is displayed,
+  the (Lamb-shifted) qubit term being omitted.  The two fractions are the co- and
+  counter-rotating contributions of
   each virtual transition $i \leftrightarrow j$; keeping only the first recovers the
   usual rotating-wave result.  The textbook two-level dispersive shift $\chi = \chi_1 - \chi_0$
-follows from truncating to the computational subspace, but for fluxonium-class
-qubits the \emph{straddling regime}, in which the resonator frequency falls
-between the $0\!\to\!1$ and $1\!\to\!2$ transition frequencies, makes this
-truncation unsafe: the dispersive shifts from the $0\!\to\!1$ and $1\!\to\!2$
-transitions then carry opposite signs and partially cancel, so higher levels
-must be included~\cite{Koch2007}.
+follows from truncating to the computational subspace.  The truncation fails when
+the resonator frequency falls between the $0\!\to\!1$ and $1\!\to\!2$ transition
+frequencies, the \emph{straddling regime} introduced for the transmon in
+Ref.~\cite{Koch2007}: the $1\!\to\!2$ contribution to $\chi$ is then comparable in
+magnitude to the $0\!\to\!1$ one, with a sign set by the detunings (inside the
+regime the two contributions add, enhancing the shift), so higher qubit levels
+must be retained; the same caution applies to fluxonium, whose richer level
+structure makes multilevel contributions to $\chi$ generic.
 
-In practice, one probes the resonator at its bare frequency $\omega_r$ and
+In practice, one probes the resonator near $\omega_r$ and
 observes a state-dependent phase shift of the transmitted or reflected signal.
 For a single-qubit system, the resonator sits at $\omega_r + \chi_0$ when the
 qubit is in $\ket{0}$ and at $\omega_r + \chi_1$ when in $\ket{1}$, resulting
-in an IQ-plane separation that grows with the dimensionless cavity pull
+in a separation in the plane of the demodulated in-phase and quadrature (IQ)
+components that grows with the dimensionless cavity pull
 $2|\chi|/\kappa$, where $\kappa$ is the resonator linewidth~\cite{Blais2004,Wallraff2004}.
 
 \paragraph{Fluxonium dispersive readout.}
-Because the fluxonium spectrum varies strongly with the external flux $\Phi_z$, so
-does its dispersive shift $\chi = \chi_1 - \chi_0$: the state-dependent coupling to
-the resonator, and hence the readout contrast, can be tuned through the flux bias.
-This tunability is a key motivation for fluxonium readout optimisation, a direction
-of interest to the Qilimanjaro team.
+Because the fluxonium spectrum varies strongly with the external flux $\Phi_z$
+(Section~\ref{subsec:sc_qubits}), so
+does its dispersive shift $\chi = \chi_1 - \chi_0$: the readout contrast is
+tunable through the flux bias, a key motivation for fluxonium readout
+optimisation, a direction of interest to the Qilimanjaro team.
 
 \subsection{Direct Digital Synthesis}
 \label{subsec:dds}
@@ -103,9 +109,7 @@ a digital amplitude via a look-up table.  A DDS numerically controlled oscillato
   f_\text{out} = \frac{f_\text{clk} \cdot \Delta\phi}{2^N},
 \end{equation}
 where $f_\text{clk}$ is the system clock, $\Delta\phi$ is the phase increment per
-clock cycle, and $N$ is the bit width of the phase accumulator.  DDS avoids the
-spur and image problems associated with analogue IQ mixers because all
-imperfections are digital and predictable.  In \QICK{}, the tProcessor drives DDS
+clock cycle, and $N$ is the bit width of the phase accumulator.  In \QICK{}, the tProcessor drives DDS
 engines on both the DAC (transmit) and ADC (receive) sides, enabling phase-locked
 signal generation and coherent demodulation~\cite{Stefanazzi2022}.
 
@@ -117,10 +121,12 @@ two clusters in the complex plane, one for $\ket{0}$ and one for $\ket{1}$.
 Single-shot state discrimination assigns each measurement to one of these
 clusters.  The simplest approach is a linear threshold: a hyperplane in the IQ
 plane that minimises the total misclassification probability, which for Gaussian
-clusters of equal covariance is the perpendicular bisector of the line connecting
-the centroids~\cite{Gambetta2007}.  The single-shot readout fidelity is
+clusters of equal covariance is the perpendicular bisector of the centroid line in
+the whitened coordinates defined by the common covariance
+(Section~\ref{subsec:ml_background})~\cite{Gambetta2007}.  The single-shot readout fidelity is
 \begin{equation}
   \mathcal{F} = 1 - \frac{1}{2}\left(p(1|0) + p(0|1)\right),
+\label{eq:fidelity}
 \end{equation}
 where $p(1|0)$ is the probability of assigning $\ket{1}$ given that the qubit was
 prepared in $\ket{0}$, and vice versa.  More sophisticated classifiers, such as
@@ -147,7 +153,7 @@ $s \in \{0, 1\}$, then the Bayes-optimal decision boundary is the hyperplane
 \label{eq:lda_boundary}
 \end{equation}
 which is exactly the decision boundary found by Linear Discriminant Analysis
-(LDA)~\cite{Gambetta2007}.  Because this boundary is already optimal under the
+(LDA)~\cite{Hastie2009}.  Because this boundary is already optimal under the
 Gaussian equal-covariance assumption, no more expressive classifier, multilayer
 perceptrons (MLPs) included, can improve on it: an MLP can at best approximate
 this boundary, never exceed the Bayes optimum.  When the covariances differ

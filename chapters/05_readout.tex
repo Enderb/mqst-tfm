@@ -4,25 +4,23 @@
 
 \subsection{DDS-Based Signal Generation}
 
-In a standard heterodyne readout chain, a local oscillator (LO) at frequency
-$f_\text{LO}$ is mixed with a baseband envelope to up-convert the readout tone to
-the resonator frequency $f_r$.  This analogue mixing process introduces image
-products and LO leakage that degrade fidelity, requiring careful IQ imbalance
-correction.
-
-\QICK{} avoids analogue mixing entirely.  Both the readout drive and the
-demodulation reference are produced by the on-chip DDS engines, which operate at
+\QICK{} avoids the analogue mixing of a standard heterodyne readout chain, in
+which a local oscillator (LO) up-converts a baseband envelope to the resonator
+frequency $f_r$ at the price of image products, LO leakage, and IQ imbalance
+correction.  Both the readout drive and the
+demodulation reference are instead produced by the on-chip DDS engines, which operate at
 the direct output frequency of the RFSoC converters (up to several GHz).  The
 waveform generated for qubit readout has the form
 \begin{equation}
   s(t) = A \cdot \text{env}(t) \cdot \cos(2\pi f_r t + \phi_\text{res}),
 \end{equation}
-where $\text{env}(t)$ is the pulse envelope (constant, Gaussian, DRAG, etc.),
+where $\text{env}(t)$ is the pulse envelope (constant, Gaussian, Derivative
+Removal by Adiabatic Gate (DRAG), etc.),
 $f_r$ is programmed directly into the DDS frequency register, and
-$\phi_\text{res}$ is the phase correction from calibration.  The only noise
-sources are digital: quantisation, clock jitter, and DDS phase truncation spurs,
-all of which are deterministic and can be mitigated by appropriate filtering and
-sample-rate choice.
+$\phi_\text{res}$ is the phase correction from calibration.  The residual
+imperfections are digital: quantisation and DDS phase-truncation spurs, which are
+deterministic and can be mitigated by appropriate filtering and sample-rate
+choice, plus random clock jitter.
 
 \subsection{Decimated vs. Accumulated Readout}
 \label{subsec:decimated_vs_accum}
@@ -48,10 +46,12 @@ point.  The per-shot integrated IQ noise is determined by the within-window
 averaging over $T_\text{win}$ samples, not by the number of repeated shots.
 From the real SSRO data, the per-shot cluster widths are approximately
 \SI{0.65}{}--\SI{0.97}{ADU} per quadrature (state-dependent), with an IQ
-separation of \SI{2.53}{ADU} and a projected SNR of 2.46.  The single-shot
+separation of \SI{2.53}{ADU} and a projected SNR of 2.46, numerically the
+Mahalanobis distance between the clusters
+(Section~\ref{subsec:integrated_iq}).  The single-shot
 assignment fidelity extracted from these clusters is 0.906 (the LDA baseline of
-Section~\ref{subsec:integrated_iq}), within the range of reported high-fidelity
-single-shot dispersive readouts~\cite{Walter2017}.
+Section~\ref{subsec:integrated_iq}), a typical value for dispersive readout
+without a quantum-limited parametric amplifier in the chain.
 
 For applications that do \emph{not} require single-shot resolution, such as
 resonator spectroscopy or Rabi calibration, the same shot can be repeated
@@ -60,13 +60,13 @@ $N_\text{reps}$ times and the results averaged, reducing the noise on the
 \begin{equation}
   \sigma_\text{mean} = \frac{\sigma_\text{single}}{\sqrt{N_\text{reps}}}.
 \end{equation}
-This averaging is appropriate when only the average response is needed; it cannot
-be applied to SSRO since averaging destroys the per-shot state information.
+It cannot
+be applied to SSRO, since averaging destroys the per-shot state information.
 
-The practical workflow is: (1) use \texttt{acquire\_decimated()} to find the
-correct \texttt{adc\_trig\_offset} and verify signal quality; (2) switch to
-\texttt{acquire()} (accumulated) for all data-taking, using single shots for SSRO
-and repeat-averaged shots for spectroscopy and calibration experiments.
+The practical workflow is to find the correct \texttt{adc\_trig\_offset} and
+verify signal quality with \texttt{acquire\_decimated()}, then take all data with
+\texttt{acquire()} (accumulated): single shots for SSRO, repeat-averaged shots for
+spectroscopy and calibration.
 
 \subsection{Resonator Spectroscopy}
 \label{subsec:spectroscopy}
@@ -77,12 +77,12 @@ the transmitted or reflected IQ amplitude.  In \QICK{}, there are two sweep
 strategies:
 
 \paragraph{FPGA-internal sweep (\texttt{add\_loop}).}
-On the tProcessor-V2 firmware a parameter such as the drive frequency can be swept
+On the tProcessor v2 firmware a parameter such as the drive frequency can be swept
 inside the FPGA with \texttt{add\_loop}, stepping through all points with no Python
-round-trips.  The readout down-conversion frequency must track the drive to keep the
-demodulated signal at baseband, though, and it is set per program rather than stepped
-in this loop; for spectroscopy, where the two must move together, this sweep alone is
-insufficient.
+round-trips.  However, the readout down-conversion frequency must track the drive to
+keep the demodulated signal at baseband, and \texttt{add\_loop} cannot step it: it is
+fixed per program.  For spectroscopy, where the two must move together, this sweep
+alone is insufficient.
 
 \paragraph{Python outer loop.}
 A Python loop instead compiles and runs one \texttt{AveragerProgramV2} per frequency
@@ -92,7 +92,9 @@ compute the ADC alias automatically).  The per-point overhead is a few milliseco
 but it can sweep any parameter, including the readout frequency, and is the approach
 used here.  At each point the magnitude $|I + jQ|$ of the accumulated phasor is
 recorded; the resonator shows up as the dip (reflection) or peak (transmission) in
-the swept response.
+the swept response.  The workflow was implemented and validated in loopback, where
+the swept response traces the front-end passband; with no device connected, no
+resonator dip was measured.
 
 \subsection{Multiplexed Readout}
 \label{subsec:multiplex}
@@ -110,20 +112,22 @@ frequency channels, analogous to a digital spectrum analyser.  Advantages over
 the single-tone DDS approach include:
 \begin{itemize}
   \item No need to retune the ADC NCO between qubits.
-  \item Computational cost scales as $O(N \log N)$ rather than $O(N)$ independent
+  \item The per-sample cost of demodulating all $N$ channels scales as $O(\log N)$
+        through the shared FFT, rather than the $O(N)$ of $N$ independent
         demodulators.
   \item Sidesteps the ADC-frequency-sweep limitation: each PFB output channel is
         a fixed digital filter, not a tunable DDS.
 \end{itemize}
 
-Multiplexed readout via the \QICK{} PFB firmware was not implemented within the
-scope of this work.  The single-tone DDS architecture described in
+Multiplexed readout via the \QICK{} PFB firmware was not implemented here.  The
+single-tone DDS architecture described in
 Sections~\ref{subsec:decimated_vs_accum} and~\ref{subsec:spectroscopy} was used
 throughout.  A natural next step is to extend the architecture to cover the four
 resonator frequencies of one of Qilimanjaro's chips: 6.505, 6.730, 6.978,
 and \SI{7.389}{\giga\hertz}.  These frequencies lie above the \SI{6}{\giga\hertz}
-upper edge of the XM655 BALUN passband, so simultaneous multiplexed readout at all
-four tones would require direct HD-header connections with discrete BALUNs, as
-discussed in Section~\ref{sec:hardware}.  The PFB channel spacing and prototype
+upper edge of the XM655 balun passband, so simultaneous multiplexed readout at all
+four tones would require direct HD-header connections with discrete baluns and
+operation of the RF-ADC above its specified input bandwidth, as
+discussed in Section~\ref{subsec:xm655}.  The PFB channel spacing and prototype
 filter bandwidth would also need to be verified against the \SI{225}{\mega\hertz}
 minimum separation between adjacent resonators in this device.

@@ -52,7 +52,7 @@
 <!-- tProcessor (left inner column) -->
 <g class="c-purple">
   <rect x="38" y="95" width="118" height="50" rx="6" stroke-width="1"/>
-  <text class="th" x="97" y="114" text-anchor="middle">tProcessor V2</text>
+  <text class="th" x="97" y="114" text-anchor="middle">tProcessor v2</text>
   <text class="ts" x="97" y="132" text-anchor="middle">Pulse sequencing</text>
 </g>
 <!-- Signal gen 0 (right inner column) -->
@@ -78,8 +78,8 @@
 <!-- Signal gen N -->
 <g class="c-teal">
   <rect x="190" y="190" width="118" height="50" rx="6" stroke-width="1"/>
-  <text class="th" x="249" y="209" text-anchor="middle">Signal gen N</text>
-  <text class="ts" x="249" y="227" text-anchor="middle">Qubit drive, &#x3C0; pulse</text>
+  <text class="th" x="249" y="209" text-anchor="middle">Signal gen</text>
+  <text class="ts" x="249" y="227" text-anchor="middle">Qubit drive (future)</text>
 </g>
 <!-- BALUN DR TX -->
 <g class="c-amber">

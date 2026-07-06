@@ -30,6 +30,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[english]{babel}
+\PassOptionsToPackage{hyphens}{url}
 \usepackage{hyperref}
 \usepackage[babel]{microtype}
 \usepackage{csquotes}
@@ -44,7 +45,7 @@
 \newtheorem{theorem}{Theorem}
 
 %% Convenience macros
-\newcommand{\QICK}{\textsc{qick}}
+\newcommand{\QICK}{QICK}
 \newcommand{\todo}[1]{{\bfseries\color{red}[TODO: #1]}}
 
 %% Abstract style (replaces quantumarticle's abstract to avoid double \maketitle)
@@ -132,7 +133,7 @@ at Qilimanjaro from February to July 2026.
 \begin{abstract}
     Low-latency and high-fidelity qubit state measurement is essential for superconducting quantum computing, particularly for enabling mid-circuit measurements and real-time feedback. While commercial control hardware increasingly supports on-FPGA state discrimination, these platforms operate on closed firmware that precludes custom signal processing pipelines. Open-source FPGA frameworks offer an alternative path: full programmatic access to the readout chain, letting researchers integrate custom algorithms, including machine learning, directly into the measurement workflow.
 
-    This thesis documents the setup and characterisation of a \QICK{}-based~\cite{Stefanazzi2022} readout system on a Xilinx ZCU216 RFSoC platform, covering FPGA configuration, DDS-based waveform generation, and analogue front-end characterisation. The work establishes a functional signal chain capable of driving and reading out superconducting resonators, and examines the hardware constraints relevant to dispersive qubit readout, including balun response and filter rolloff across the relevant frequency bands.
+    This thesis documents the setup and characterisation of a \QICK{}-based~\cite{Stefanazzi2022} readout system on a Xilinx ZCU216 RFSoC platform, covering FPGA configuration, DDS-based waveform generation, and the analogue front-end signal path. The work establishes a functional loopback signal chain, validated end-to-end from pulse generation to demodulated IQ data, together with the calibration workflow needed to drive and read out superconducting resonators once a device is attached, and examines the constraints the hardware places on dispersive qubit readout at the target resonator frequencies.
 
     Using existing single-shot readout data from a superconducting qubit device, we
     design and evaluate a machine-learning-assisted state discrimination pipeline.  On

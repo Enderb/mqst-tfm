@@ -31,8 +31,9 @@ firmware precludes custom signal processing pipelines: researchers cannot inject
 bespoke algorithms, machine-learning classifiers among them, into the real-time
 decision path.  The Quantum Instrumentation Control Kit
 (\QICK)~\cite{Stefanazzi2022} addresses this gap as an open-source FPGA firmware
-and software framework that turns Xilinx Radio-Frequency System-on-Chip (RFSoC)
-boards into complete qubit controllers, combining fast digital-to-analogue
+and software framework that turns Xilinx\footnote{Xilinx was acquired by AMD in
+2022; this thesis uses the Xilinx name throughout.} Radio-Frequency
+System-on-Chip (RFSoC) boards into complete qubit controllers, combining fast digital-to-analogue
 converters (DACs), analogue-to-digital converters (ADCs), and a tightly
 integrated soft-processor into a single compact platform.  Full access to the
 programmable logic fabric makes it possible to define the entire readout and
@@ -61,9 +62,9 @@ This thesis makes the following contributions:
             board power-on, giving reproducible IQ measurements across sessions.
 
       \item \textbf{Readout data-path design}: a characterisation of the trade-offs
-            between decimated and accumulated readout modes and a complete resonator
-            spectroscopy workflow suitable for both single-qubit and multiplexed
-            measurements.
+            between decimated and accumulated readout modes and a resonator
+            spectroscopy workflow for single-tone measurements, with an assessment
+            of the extension to multiplexed readout.
 
       \item \textbf{Real-time feedback primitives}: reproducing the \QICK{}
             \texttt{condj} conditional-branch demo on the tProcessor in loopback, and
@@ -73,8 +74,8 @@ This thesis makes the following contributions:
             board is connected to a qubit chip.
 
       \item \textbf{ML-assisted state discrimination}: offline design and evaluation
-            of a lightweight ML discrimination pipeline on existing experimental SSRO
-            data, establishing that LDA is near-optimal for integrated IQ inputs, and
+            of a lightweight ML discrimination pipeline on existing experimental
+            single-shot readout (SSRO) data, establishing that LDA is near-optimal for integrated IQ inputs, and
             demonstrating via synthetic raw traces that a 1D CNN recovers
             $T_1$-relaxation shots irrecoverable by integration-based methods.  A
             concrete path toward FPGA deployment is outlined.
@@ -84,10 +85,8 @@ This thesis makes the following contributions:
 
 Section~\ref{sec:background} reviews the relevant theory of superconducting
 qubits, circuit quantum electrodynamics (cQED), and dispersive readout.
-Section~\ref{sec:hardware} describes the hardware platform.
-Section~\ref{sec:integration} covers system integration and calibration.
-Section~\ref{sec:readout} presents the readout architecture and measurement
+Sections~\ref{sec:hardware}--\ref{sec:readout} describe the hardware platform,
+system integration and calibration, and the readout architecture and measurement
 workflows.  Section~\ref{sec:feedback} describes real-time feedback and
 mid-circuit measurement.  Section~\ref{sec:ml} evaluates machine-learning-based
-state discrimination.  Section~\ref{sec:conclusions} summarises the results and
-outlines future directions.
+state discrimination, and Section~\ref{sec:conclusions} concludes.

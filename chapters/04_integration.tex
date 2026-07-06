@@ -8,7 +8,8 @@ The ZCU216 boots the PYNQ Linux image from an SD card.  After boot, the
 \QICK{} bitstream is loaded onto the FPGA fabric by instantiating a
 \texttt{QickSoc} object in Python, which calls the PYNQ overlay loader and
 configures all IP blocks.  Because the RFSoC converters are controlled through
-AXI register maps rather than external chip-select lines, initialisation is
+AXI (Advanced eXtensible Interface) register maps rather than external
+chip-select lines, initialisation is
 entirely software-driven.
 
 The board is accessed over SSH, and experiments are run from Jupyter notebooks
@@ -23,13 +24,13 @@ The \QICK{} firmware assigns each physical DAC output to a numbered
 \emph{generator channel} and each physical ADC input to a numbered
 \emph{readout channel}.  This assignment is specific to the firmware build:
 different bitstreams expose different channel counts and even renumber the same
-physical port.  The experiments here used the tProcessor-V2 firmware build
+physical port.  The experiments here used the tProcessor v2 firmware build
 \texttt{2024-09-03\_216\_tprocv2r21\_demo}~\cite{QICKtprocv2}; Table~\ref{tab:channels}
 lists the generator and readout channels used, with their physical ports.
 
 \begin{table}[ht]
 \centering
-\caption{QICK channel mapping used on the ZCU216 (tProcessor-V2 build).}
+\caption{QICK channel mapping used on the ZCU216 (tProcessor v2 build).}
 \label{tab:channels}
 \begin{tabular}{llll}
 \toprule
@@ -93,11 +94,11 @@ a measurement session.
 A summary of the recommended start-of-session checklist is:
 \begin{enumerate}
   \item Power on and wait for PYNQ to boot ($\approx$\SI{60}{\second}).
-  \item Connect the loopback (readout DAC $\to$ BALUN $\to$ SMA $\to$ BALUN $\to$
+  \item Connect the loopback (readout DAC $\to$ balun $\to$ SMA $\to$ balun $\to$
         readout ADC) and run the phase calibration notebook.
-  \item Identify the correct \texttt{adc\_trig\_offset} using decimated readout
-        (see Section~\ref{subsec:decimated_vs_accum}).
-  \item Switch to accumulated readout for all data-taking.
+  \item Identify the correct \texttt{adc\_trig\_offset} using decimated readout,
+        then switch to accumulated readout for all data-taking
+        (Section~\ref{subsec:decimated_vs_accum}).
   \item At session end, call \texttt{soc.reset\_gens()} to halt all running
         generators.
 \end{enumerate}

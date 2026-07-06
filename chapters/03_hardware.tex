@@ -13,13 +13,13 @@ up-conversion stage.  Using higher Nyquist zones the DAC can emit tones up to ab
 \SI{9.85}{\giga\hertz}, a limit set by its sampling rate and not by the signal
 chain; within that range it synthesises the commanded tone regardless of what is
 connected, though the amplitude rolls off toward the higher zones.  The usable band
-in this work is bounded instead by the analogue front-end, whose BALUN passes
+in this work is bounded instead by the analogue front-end, whose balun passes
 roughly \SIrange{0}{6}{\giga\hertz}: tones above that are still generated, but leave
 the board attenuated and distorted.
 
 The ZCU216 was chosen for practical reasons rather than as a bespoke control
-instrument.  It is a general-purpose RFSoC evaluation board, commercially available
-and of the kind a laboratory can readily obtain, and it is one of the platforms
+instrument.  It is a commercially available, general-purpose RFSoC evaluation
+board, and one of the platforms
 supported by \QICK{}, the open-source control framework at the centre of this work
 (Section~\ref{subsec:qick_stack}).  \QICK{} is also moving from a research tool
 toward a commercially supported standard: in 2026 the US Department of Energy and
@@ -47,7 +47,7 @@ summarises the key specifications relevant to this thesis.
             ADC channels     & 16                    & Differential GSPS \\
             ADC rate         & up to \SI{2.5}{GS/s}  & Per channel       \\
             ADC resolution   & 14 bit                &                   \\
-            FPGA fabric      & UltraScale+           & 930k LUT          \\
+            FPGA fabric      & UltraScale+           & $\approx$425k LUTs (930k logic cells) \\
             Processor        & 4$\times$ Cortex-A53  & \SI{1.5}{GHz}     \\
             Operating system & PYNQ Linux            &                   \\
             \bottomrule
@@ -63,7 +63,7 @@ into a self-contained qubit controller.  It consists of two layers:
 
 \paragraph{Firmware.}
 The digital logic loaded onto the FPGA, built from reusable hardware modules
-(\emph{IP blocks}) using Vivado, AMD/Xilinx's FPGA design software.  Vivado
+(\emph{IP blocks}) using Vivado, Xilinx's FPGA design software.  Vivado
 compiles a description of the desired logic into a \emph{bitstream}, the
 configuration file that programs the FPGA fabric into the required circuit at
 power-on.  The \QICK{} firmware comprises:
@@ -76,7 +76,7 @@ power-on.  The \QICK{} firmware comprises:
             received signal to baseband.  Each readout block provides both a decimated
             output (time-domain I/Q waveform) and an accumulation buffer (averaged I/Q
             pair).  Readout channel 0 (ADC tile 2 block 0) receives the returning tone.
-      \item \textbf{tProcessor V2}: a soft-processor that orchestrates pulse timing
+      \item \textbf{tProcessor v2}: a soft-processor that orchestrates pulse timing
             with nanosecond precision.  It executes a custom instruction set including
             direct memory writes (\texttt{memri}), register arithmetic (\texttt{mathi},
             \texttt{regwi}), conditional branches (\texttt{condj}), and pulse triggers.
@@ -91,7 +91,7 @@ exposes high-level classes for writing and running experiments:
       \item \texttt{QickSoc}: instantiates the full hardware stack, loads the
             bitstream, and provides access to the converters and tProcessor.
       \item \texttt{AveragerProgramV2} (from \texttt{qick.asm\_v2}): the base class
-            for measurement sequences on the tProcessor-V2 firmware used here.  A
+            for measurement sequences on the tProcessor v2 firmware used here.  A
             program subclasses it and defines \texttt{\_initialize()}, which declares
             the generators and readouts and registers named pulses, and
             \texttt{\_body()}, which plays those pulses, triggers the readout, and
@@ -109,41 +109,47 @@ reported here were carried out.
 
 The ZCU216's RF converters use differential signalling on High-Density (HD)
 headers (the DAC and ADC used here sit on JHC3 and JHC7).  The XM655 module is Xilinx's daughter-card
-solution: it provides BALUN (balanced-to-unbalanced) transformers that convert the
+solution: it provides baluns (balanced-to-unbalanced transformers) that convert the
 differential DAC outputs and ADC inputs to/from single-ended SMA ports, along with
 optional filtering.
 
 The key constraint introduced by the XM655 in this work is its bandwidth: the
-BALUNs cover \SIrange{10}{6000}{\mega\hertz}, so resonator frequencies above
+baluns cover \SIrange{10}{6000}{\mega\hertz}, so resonator frequencies above
 \SI{6}{\giga\hertz} require connections directly on the HD header pins using pigtail
 cables.  Those tones also fall in the DAC's second Nyquist zone, so the generator is
 run with \texttt{nqz=2} to synthesise them; this, together with the balun rolloff,
-is why the highest resonators are reached by bypassing the XM655 baluns.
+is why the highest resonators are reached by bypassing the XM655 baluns.  Bypassing
+the balun removes the front-end limit but not the converter's own: the RF-ADC's
+specified analogue input bandwidth is also about \SI{6}{\giga\hertz}, so receiving
+\SIrange{6.5}{7.4}{\giga\hertz} tones (the sixth ADC Nyquist zone at
+\SI{2.5}{GS/s}) means operating the converter beyond its specified band, as
+\QICK{} systems do in practice, at the cost of additional sensitivity rolloff;
+analogue down-conversion ahead of the ADC is the fallback.
 
 The loopback path used for calibration experiments consists of:
-DAC tile 2 blk 0 (JHC3) $\to$ HD-SMA pigtail $\to$ BALUN $\to$ SMA cable
-$\to$ BALUN $\to$ HD-SMA pigtail $\to$ ADC tile 2 blk 0 (JHC7).
+DAC tile 2 blk 0 (JHC3) $\to$ HD-SMA pigtail $\to$ balun $\to$ SMA cable
+$\to$ balun $\to$ HD-SMA pigtail $\to$ ADC tile 2 blk 0 (JHC7).
 
 Figure~\ref{fig:system_topology} shows the high-level signal flow from the
 tProcessor to the qubit chip and back.
 
 \begin{figure}[t]
       \centering
-      \includegraphics[width=\columnwidth]{figures/system_topology}
+      \includegraphics[width=0.88\columnwidth]{figures/system_topology}
       \caption{System signal chain for the \QICK{}-based readout platform.  The
-            tProcessor V2 sequences pulses on two generator channels: the readout
-            generator drives the readout tone through the XM655 TX BALUN to the
-            resonator, and a second generator drives the qubit directly via a second
-            TX BALUN channel for $\pi$-pulse control.  The reflected readout tone
-            returns through the XM655 RX BALUN to the readout ADC and is demodulated
-            to an IQ pair (the channel and port numbers are those of
-            Table~\ref{tab:channels}).  The XM655 BALUNs cover
+            tProcessor v2 sequences pulses on two generator channels: the readout
+            generator drives the readout tone through the XM655 TX balun to the
+            resonator, and a second generator would drive the qubit directly via a
+            second TX balun channel for $\pi$-pulse control.  The reflected readout
+            tone returns through the XM655 RX balun to the readout ADC and is
+            demodulated to an IQ pair (the channel and port numbers are those of
+            Table~\ref{tab:channels}).  The XM655 baluns cover
             \SIrange{10}{6000}{\mega\hertz}; resonator frequencies above
             \SI{6}{\giga\hertz} require direct HD-header pigtail connections,
-            bypassing the XM655.  The qubit chip and its connections are shown as a
-            design target; the board was not connected to a qubit chip within the
-            scope of this work.  Calibration experiments use the loopback path
-            (TX~BALUN $\to$ SMA cable $\to$ RX~BALUN) shown inside the XM655
+            bypassing the XM655.  The qubit chip, its connections, and the qubit
+            drive channel are shown as design targets; the board was not connected
+            to a qubit chip in this work.  Calibration experiments use the loopback
+            path (TX~balun $\to$ SMA cable $\to$ RX~balun) shown inside the XM655
             container.}
       \label{fig:system_topology}
 \end{figure}

@@ -5,12 +5,12 @@
 A key motivation for FPGA-based control is the ability to execute
 \emph{real-time} conditional logic: perform a measurement, make a decision, and
 apply a corrective pulse, all on the FPGA.
-This section describes the tProcessor V2 instruction set, demonstrates the
+This section describes the tProcessor v2 instruction set, demonstrates the
 conditional branching primitive, and outlines the active qubit reset protocol.
 
 \subsection{tProcessor Architecture}
 
-The tProcessor V2 is a soft-processor synthesised in the FPGA fabric, with a
+The tProcessor v2 is a soft-processor synthesised in the FPGA fabric, with a
 custom instruction set tailored to pulse generation and readout sequencing.  Each
 channel page holds 32 general-purpose 64-bit registers, with cross-page registers
 for inter-channel synchronisation.  Dedicated instructions fire the DAC generators
@@ -22,11 +22,9 @@ branch \texttt{condj page, reg\_a, op, reg\_b, label}, which jumps to \texttt{la
 when \texttt{reg\_a op reg\_b} holds.
 
 All branching targets are resolved at \emph{compile time} by the Python
-assembler: Python's sequential execution of \texttt{body()} builds an
-instruction list, \texttt{label()} records the current position as a named
-address, and the assembler backpatches jump targets before loading the program
-onto the tProcessor.  By the time the program runs, only integer addresses exist;
-there is no runtime symbol table.
+assembler: \texttt{label()} records instruction positions as named addresses and
+jump targets are backpatched before the program is loaded, so at run time only
+integer addresses exist.
 
 \subsection{Conditional Logic Demonstration}
 \label{subsec:cond_logic}
@@ -45,7 +43,10 @@ def body(self):
     self.sync_all(self.us2cycles(cfg["relax_delay"]))
 \end{minted}
 
-Registers 1 and 2 are pre-loaded with the threshold and the test value via
+The demo runs on the original v1-style programming interface (\texttt{body},
+\texttt{synci}), not the tProcessor v2 API used elsewhere
+(Section~\ref{subsec:qick_stack}); the conditional-branch primitive is common to
+both.  Registers 1 and 2 are pre-loaded with the threshold and the test value via
 \texttt{regwi}.  When \texttt{number=100, threshold=50}: the condition
 \texttt{100 < 50} is false, the pulse fires, and the ADC captures a loopback
 signal.  When \texttt{number=10, threshold=50}: the condition is true, the pulse
@@ -81,9 +82,11 @@ amplitude.  The Rabi sequence is:
   \item Read out via the resonator.
 \end{enumerate}
 
-The qubit drive tone is at $\omega_{01}$ (the qubit transition frequency,
-typically \SIrange{5}{7}{\giga\hertz} for fluxonium), which is distinct from the
-resonator frequency $\omega_r$ used for readout.  Two separate generator channels
+The qubit drive tone is at $\omega_{01}$, distinct from the resonator frequency
+$\omega_r$ used for readout.  For transmons $\omega_{01}$ is typically
+\SIrange{4}{8}{\giga\hertz}; for fluxonium biased near half flux it is far lower,
+of order \SIrange{0.1}{1}{\giga\hertz}, which changes the drive-line requirements
+but not the sequence described here.  Two separate generator channels
 are therefore required: one for readout, one for qubit control.  The
 \QICK{} firmware supports this natively: the tProcessor can address both channels
 independently with nanosecond timing precision.
@@ -93,7 +96,7 @@ independently with nanosecond timing precision.
 
 Active reset rapidly returns the qubit to $\ket{0}$ by measuring its state and
 applying a corrective $\pi$ pulse only if the qubit is found in $\ket{1}$~\cite{Reed2010}.  The
-\QICK{} tProcessor V2 has all the primitives required to implement this entirely
+\QICK{} tProcessor v2 has all the primitives required to implement this entirely
 on-FPGA: the conditional branch demonstrated in Section~\ref{subsec:cond_logic}
 provides the decision logic, and the two-channel architecture supports
 simultaneous readout and drive.  The following protocol, assembled from these
@@ -114,8 +117,7 @@ primitives, would be deployed once the board is connected to a qubit chip:
 Because the entire decision-to-pulse path would run inside the tProcessor, the
 latency between completing the readout window and firing the corrective pulse is
 determined solely by FPGA clock cycles.  For the ZCU216 operating at a
-\SI{384}{\mega\hertz} fabric clock, this latency is of order tens of nanoseconds,
-orders of magnitude faster than a software round-trip.
+\SI{384}{\mega\hertz} fabric clock, this latency is of order tens of nanoseconds.
 
 \subsection{Latency Budget}
 
@@ -134,7 +136,7 @@ Readout pulse duration     & \SIrange{0.5}{2}{\micro\second}   & Depends on $\ka
 ADC integration window     & \SIrange{0.5}{2}{\micro\second}   & \\
 FPGA decision (threshold)  & $\sim$\SI{10}{\nano\second}        & tProcessor cycles \\
 Conditional branch         & $\sim$\SI{3}{\nano\second}         & 1 tProc cycle \\
-$\pi$ pulse duration       & \SIrange{50}{500}{\nano\second}    & Depends on $T_1$ \\
+$\pi$ pulse duration       & \SIrange{50}{500}{\nano\second}    & Set by drive strength; $\ll T_1$ \\
 \midrule
 Total (excl. readout)      & $<$\SI{1}{\micro\second}           & \\
 \bottomrule

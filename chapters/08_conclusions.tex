@@ -25,7 +25,8 @@ The main contributions are:
         were characterised.  Accumulated readout gives one integrated $(I, Q)$ pair
         per shot for SSRO; repeat-averaging improves spectroscopy SNR but destroys
         the single-shot information.  A resonator spectroscopy workflow was
-        established for single-qubit and multiplexed scenarios.
+        implemented and validated in loopback; its extension to multiplexed
+        readout was assessed but not implemented.
 
   \item \textbf{Real-time feedback primitives}: The \QICK{} \texttt{condj}
         conditional-branch demo was reproduced in loopback, and an active-reset
@@ -42,8 +43,8 @@ The main contributions are:
         fidelity and 98.4\% accuracy on the 122 relaxation shots, against 44.3\%
         for LDA; because the synthetic set over-represents relaxation, the robust
         conclusion is the qualitative advantage of raw-trace input rather than the
-        size of the gap.  FPGA deployment was not achieved within the scope of this
-        work; Section~\ref{subsec:deployment_path} outlines the path toward it.
+        size of the gap.  FPGA deployment remains future work;
+        Section~\ref{subsec:deployment_path} outlines the path toward it.
 \end{enumerate}
 
 \subsection{Outlook}
@@ -52,8 +53,10 @@ Several extensions follow directly from the results above.  The first experiment
 priority is to collect a real \texttt{SSRO\_raw.h5} dataset from the ZCU216 with
 \texttt{acquire\_decimated}, retrain the CNN, and check that the $T_1$-relaxation
 recovery generalises to real data; the synthetic $T_1$ should first be recalibrated
-to the measured $\ket{1}$ error rate ($\approx 12.75\%$, implying $T_1 \approx
-1200$--$1500$ samples rather than the 600 used here).  With real traces in hand, the
+to the measured $\ket{1}$ error rate of 12.7\%, an upper bound on the relaxation
+fraction (part of it is Gaussian-overlap error, cf.\ the 6.0\% $\ket{0}$ error
+rate), implying $T_1 \gtrsim 1500$ samples rather than the 600 used
+here.  With real traces in hand, the
 CNN can be exported via \texttt{hls4ml} and synthesised as a fixed-point IP block in
 the QICK bitstream (Section~\ref{subsec:deployment_path}), closing the active-reset
 loop at full speed without a software round-trip.
@@ -63,8 +66,7 @@ would allow simultaneous readout of all qubits in Qilimanjaro's multi-qubit chip
 prerequisite for quantum error-correction cycles.  The \QICK{}-based readout layer
 should also be integrated with Qilimanjaro's higher-level programming interfaces
 (circuit compilation, calibration databases, experiment management) for a
-production-ready stack.  Finally, the fluxonium dispersive-shift landscape is
-two-dimensional in the $(\Phi_z, \Phi_x)$ flux space, and an ML-assisted
-optimisation of the readout circuit parameters (coupling capacitance, resonator
-frequency) to maximise the cavity pull over a large flux region is a natural
+production-ready stack.  Finally, the fluxonium dispersive shift varies strongly
+across the external-flux landscape, and an ML-assisted optimisation of the readout
+circuit parameters to maximise the cavity pull over that landscape is a natural
 complementary direction.
