@@ -8,9 +8,14 @@ The Xilinx Zynq UltraScale+ ZCU216 evaluation board~\cite{ZCU216} is built aroun
 device that integrates, on a single chip, a quad-core ARM Cortex-A53 processor,
 an FPGA fabric, and 16 RF-DAC and 16 RF-ADC channels with sampling rates up to
 \SI{9.85}{\giga S/s} and \SI{2.5}{\giga S/s}, respectively.  At 14-bit resolution,
-the converters can directly synthesise and capture signals in the
-\SIrange{0}{6}{\giga\hertz} range without an external frequency up-conversion stage,
-provided the analogue signal chain is suitably conditioned.
+the converters synthesise and capture signals directly at RF, with no external
+up-conversion stage.  Using higher Nyquist zones the DAC can emit tones up to about
+\SI{9.85}{\giga\hertz}, a limit set by its sampling rate and not by the signal
+chain; within that range it synthesises the commanded tone regardless of what is
+connected, though the amplitude rolls off toward the higher zones.  The usable band
+in this work is bounded instead by the analogue front-end, whose BALUN passes
+roughly \SIrange{0}{6}{\giga\hertz}: tones above that are still generated, but leave
+the board attenuated and distorted.
 
 The ZCU216 was chosen for practical reasons rather than as a bespoke control
 instrument.  It is a general-purpose RFSoC evaluation board, commercially available
@@ -22,10 +27,11 @@ Fermilab finalised an agreement for the control-electronics vendor Qblox to
 commercialise and distribute it~\cite{QbloxQICK2026}.  Other RFSoC boards would
 also run \QICK{}; the ZCU216 is the one that was available for this project.
 
-The board runs the PYNQ Linux distribution, which exposes the FPGA fabric and the
-converters through Python libraries, making it straightforward to implement and
-iterate on firmware/software stacks.  Table~\ref{tab:zcu216} summarises the key
-specifications relevant to this thesis.
+The board boots the PYNQ image, an Ubuntu-based userspace with a Xilinx kernel,
+which provides Python bindings (AXI4-Lite register access, DMA, and interrupts) to
+the IP in the loaded overlay, including the data converters.  This makes it
+straightforward to iterate on firmware/software stacks.  Table~\ref{tab:zcu216}
+summarises the key specifications relevant to this thesis.
 
 \begin{table}[ht]
       \centering
