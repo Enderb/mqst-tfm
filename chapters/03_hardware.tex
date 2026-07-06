@@ -10,9 +10,7 @@ an FPGA fabric, and 16 RF-DAC and 16 RF-ADC channels with sampling rates up to
 \SI{9.85}{\giga S/s} and \SI{2.5}{\giga S/s}, respectively.  At 14-bit resolution,
 the converters synthesise and capture signals directly at RF, with no external
 up-conversion stage.  Using higher Nyquist zones the DAC can emit tones up to about
-\SI{9.85}{\giga\hertz}, a limit set by its sampling rate and not by the signal
-chain; within that range it synthesises the commanded tone regardless of what is
-connected, though the amplitude rolls off toward the higher zones.  The usable band
+\SI{9.85}{\giga\hertz}.  The usable band
 in this work is bounded instead by the analogue front-end, whose balun passes
 roughly \SIrange{0}{6}{\giga\hertz}: tones above that are still generated, but leave
 the board attenuated and distorted.
